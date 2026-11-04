@@ -787,7 +787,7 @@ function recordLocalStockMovement(product,change,type,reason,reference){
 function applySaleStock(sale){
  const oldProduct=sale.stock_deducted?sale.stock_product_id?data.products.find(p=>String(p.id)===String(sale.stock_product_id)):findInventoryProduct(sale.stock_item||sale.item):null;
  const oldQty=Number(sale.stock_deducted_quantity||0);
- const newProduct=findInventoryProduct(sale.item),newQty=Math.max(0,Number(sale.quantity||1));
+ const newProduct=sale.sku?(data.products||[]).find(p=>String(p.sku||'').trim().toLowerCase()===String(sale.sku).trim().toLowerCase()):findInventoryProduct(sale.item),newQty=Math.max(0,Number(sale.quantity||1));
  const oldBefore=oldProduct?Number(oldProduct.qty||0):0;
  const saleDate=String(sale.date||today());
  if(newProduct?.expiry_date&&String(newProduct.expiry_date)<saleDate){if(oldProduct)oldProduct.qty=String(oldBefore);alert('Sale blocked: '+newProduct.name+' is expired (expiry date '+newProduct.expiry_date+'). Check the batch and remove expired stock from saleable inventory.');return false;}
