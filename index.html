@@ -106,7 +106,7 @@ function render(){
 const currencySelect=$('currencySelect');
 currencySelect.innerHTML=currencies.map(([country,code])=>'<option value="'+code+'">'+country+' ('+code+')</option>').join('');
 currencySelect.value=currencyCode;
-currencySelect.onchange=()=>{currencyCode=currencySelect.value;localStorage.setItem(CURRENCY_KEY,currencyCode);updateCurrencyLabels();render()};
+currencySelect.onchange=()=>{currencyCode=currencySelect.value;localStorage.setItem(CURRENCY_KEY,currencyCode);$('profileCurrency').value=currencyCode;updateCurrencyLabels();render()};
 updateCurrencyLabels();
 const today=()=>new Date().toISOString().slice(0,10);
 function field(label,name,type='text',required=true,extra=''){return '<div class="field"><label>'+label+'</label><input name="'+name+'" type="'+type+'" '+(required?'required':'')+' '+extra+'></div>'}
@@ -195,6 +195,15 @@ async function activateUser(user){
  })();
  try{await activationPromise;}finally{activationPromise=null;}
 }
+async function saveBusinessProfile(){
+ const message=$('profileMessage');message.textContent='Saving…';
+ const payload={business_name:$('profileName').value.trim(),country_code:$('profileCountry').value,currency_code:$('profileCurrency').value,contact_phone:$('profilePhone').value.trim()||null,contact_email:$('profileEmail').value.trim()||null};
+ if(!payload.business_name){message.textContent='Please enter your business name.';return}
+ const {error}=await sb.from('business_profiles').upsert({user_id:currentUser.id,...payload});
+ if(error){message.textContent='Could not save: '+error.message;return}
+ businessProfile={...businessProfile,...payload};currencyCode=payload.currency_code;localStorage.setItem(CURRENCY_KEY,currencyCode);currencySelect.value=currencyCode;updateCurrencyLabels();render();message.textContent='Business profile saved successfully.';
+}
+$('profileForm').addEventListener('submit',async e=>{e.preventDefault();await saveBusinessProfile()});
 function rowWithId(x){return {...x,id:x.id||uid()}}
 async function loadCloudData(){
  if(!currentUser)return;
@@ -249,9 +258,11 @@ async function loadCloudData(){
   const {data:profile,error:profileError}=await sb.from('business_profiles').select('*').eq('user_id',currentUser.id).maybeSingle();
   if(profileError)throw profileError;
   if(!profile){
-   const {error}=await sb.from('business_profiles').upsert({user_id:currentUser.id,business_name:currentUser.user_metadata?.business_name||'My Business',country_code:'NG',currency_code:currencyCode});
+   businessProfile={...businessProfile,business_name:currentUser.user_metadata?.business_name||'My Business',contact_email:currentUser.email||''};
+   const {error}=await sb.from('business_profiles').upsert({user_id:currentUser.id,...businessProfile});
    if(error)throw error;
-  }else if(profile.currency_code){currencyCode=profile.currency_code;localStorage.setItem(CURRENCY_KEY,currencyCode);currencySelect.value=currencyCode;render();}
+  }else businessProfile={...businessProfile,...profile};
+  currencyCode=businessProfile.currency_code||currencyCode;localStorage.setItem(CURRENCY_KEY,currencyCode);currencySelect.value=currencyCode;showBusinessProfile();render();}
  }catch(err){console.error(err);alert('Cloud sync could not finish: '+err.message+'. Your browser records are still kept on this device.');}
 }
 function dbRows(table,items){
