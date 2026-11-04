@@ -10,6 +10,42 @@
 @media(max-width:900px){.shell{grid-template-columns:1fr}.sidebar{position:fixed;z-index:4;inset:0 auto 0 0;width:260px;transform:translateX(-105%);transition:.2s;box-shadow:15px 0 40px #0008}.sidebar.open{transform:translateX(0)}.mobile-menu{display:inline-flex}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.main{padding-top:20px}.content-grid{grid-template-columns:1fr}}
 .account-lines{display:grid;gap:8px}.account-line{display:grid;grid-template-columns:minmax(130px,1.5fr) 1fr 1fr;gap:7px}.account-line select,.account-line input{min-width:0;width:100%;background:#081b27;border:1px solid var(--line);border-radius:9px;padding:9px;color:var(--text)}.statement-line{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12px}.statement-line.total{font-weight:800;color:var(--teal)}.statement-line span{color:var(--muted)}.statement-note{font-size:11px;color:var(--muted);padding:10px 0}@media(max-width:520px){.account-line{grid-template-columns:1fr 1fr 1fr}.main{padding:16px 13px 35px}.topbar{margin-bottom:23px}.date-pill{display:none}.stats{gap:9px}.card{padding:14px}.stat-value{font-size:22px}.report-grid{grid-template-columns:1fr}.section-head{align-items:flex-start}.section-head .btn{white-space:nowrap}}
 </style>
+<style>
+/* BridanX visual identity refresh */
+:root{--bg:#06131f;--panel:#0b1e2c;--panel2:#102a39;--line:#1b3949;--text:#eff8fa;--muted:#9ab0ba;--teal:#36d9c5;--teal2:#0d918d;--radius:20px}
+body{background:radial-gradient(ellipse at 78% -18%,rgba(24,112,119,.24),transparent 42%),linear-gradient(180deg,#071724 0%,#06131f 72%);letter-spacing:.005em}
+.sidebar{background:linear-gradient(180deg,#081a28 0%,#071521 100%);border-right-color:#1a3545;padding-top:28px}
+.brand{gap:13px;padding-left:7px}
+.brand strong{font-size:15px;letter-spacing:.35px;font-weight:850}
+.brand small{display:block;margin-top:2px;letter-spacing:1.55px;font-size:9px;font-weight:800;color:#75a3ad}
+.brand-mark{width:46px;height:46px;display:block;flex:none;filter:drop-shadow(0 8px 16px #16cbb333)}
+.auth-card .brand-mark{width:54px;height:54px}
+.nav button{padding:11px 13px;border:1px solid transparent;transition:background .18s,border-color .18s,color .18s}
+.nav button.active{background:linear-gradient(100deg,#123b45,#102b39);border-color:#20515a;color:#70eadb;box-shadow:inset 3px 0 #36d9c5}
+.nav button:hover{background:#102e3c;color:#e8fffc}
+.side-bottom{background:linear-gradient(145deg,#0d2634,#0a1c29);border-color:#244554;line-height:1.65}
+.main{padding-top:30px}
+.topbar{padding:0 0 20px;border-bottom:1px solid rgba(43,77,91,.58);margin-bottom:27px}
+.topbar h1{font-size:clamp(25px,3vw,34px);font-weight:780;letter-spacing:-1.1px}
+.eyebrow{letter-spacing:1.9px;font-size:10px}
+.profile-mark{width:40px;height:40px;display:block;border:1px solid #28505d;border-radius:13px;box-shadow:0 6px 18px #0003}
+.card{background:linear-gradient(145deg,rgba(17,43,58,.97),rgba(9,29,43,.98));border-color:#1d3c4c;box-shadow:0 12px 30px rgba(0,0,0,.12)}
+.card:hover{border-color:#285565}
+.stats .card{padding:20px}
+.stat-icon{background:linear-gradient(145deg,#164c50,#12333e);color:#70eadb;border:1px solid #23605d}
+.btn{border-color:#294958;background:#102a39;transition:transform .16s,filter .16s,border-color .16s}
+.btn:hover{transform:translateY(-1px);border-color:#3b7b80}
+.btn.primary{background:linear-gradient(135deg,#48e3ce,#1cb7ac);border-color:#36d9c5;color:#042b2b;box-shadow:0 7px 18px rgba(31,199,181,.16)}
+.field input,.field select,.account-line input,.account-line select{background:#071a27;border-color:#234352}
+.field input:focus,.field select:focus{box-shadow:0 0 0 3px rgba(54,217,197,.12)}
+th{background:#0a1d2b}
+.table-card{box-shadow:none}
+#authGate{background:radial-gradient(ellipse at 50% 0,rgba(31,130,133,.27),transparent 48%),#06131f}
+.auth-card{background:linear-gradient(145deg,#102b3a,#091d2b);border-color:#28505c;box-shadow:0 30px 90px #0009;padding:30px}
+.auth-card h2{font-size:28px;letter-spacing:-.8px}
+@media(max-width:900px){.sidebar{background:#071925}.topbar{padding-bottom:16px}}
+@media(max-width:520px){.main{padding:15px 13px 35px}.topbar{margin-bottom:20px}.brand-mark{width:42px;height:42px}.auth-card{padding:23px}}
+</style>
 </head>
 <body>
 
@@ -23,7 +59,7 @@
 </style>
 <div id="authGate">
  <div class="auth-card">
-  <div class="brand" style="padding:0 0 20px"><div class="logo">BX</div><div><strong>BridanX</strong><small>BUSINESS MANAGER</small></div></div>
+  <div class="brand" style="padding:0 0 20px"><img class="brand-mark" src="assets/bridanx-mark.svg" alt="BridanX logo"><div><strong>BridanX</strong><small>BUSINESS MANAGER</small></div></div>
   <h2 id="authTitle">Welcome back</h2><p>Sign in to securely access your business records from your devices.</p>
   <div class="auth-tabs"><button class="btn primary" id="showLogin" type="button">Sign in</button><button class="btn" id="showSignup" type="button">Create account</button></div>
   <form id="authForm">
@@ -50,7 +86,7 @@
  <div class="side-bottom"><b>BridanX Digital Business Hub</b>One clear view of your business. Your records are saved in this browser on this device.</div>
 </aside>
 <main class="main">
- <header class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="btn mobile-menu" id="menuBtn">☰</button><div><div class="eyebrow">BUSINESS WORKSPACE</div><h1 id="pageTitle">Overview</h1></div></div><div class="top-actions"><div id="accountBar"><span class="auth-business-name" id="signedInBusinessName">My Business</span><button class="btn" id="signOutBtn" type="button">Sign out</button></div><select id="currencySelect" aria-label="Display currency" class="date-pill" style="max-width:170px;background:#0c202d;color:var(--text);border:1px solid var(--line)"></select><div class="date-pill" id="today"></div><div class="avatar">BX</div></div></header>
+ <header class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="btn mobile-menu" id="menuBtn">☰</button><div><div class="eyebrow">BUSINESS WORKSPACE</div><h1 id="pageTitle">Overview</h1></div></div><div class="top-actions"><div id="accountBar"><span class="auth-business-name" id="signedInBusinessName">My Business</span><button class="btn" id="signOutBtn" type="button">Sign out</button></div><select id="currencySelect" aria-label="Display currency" class="date-pill" style="max-width:170px;background:#0c202d;color:var(--text);border:1px solid var(--line)"></select><div class="date-pill" id="today"></div><img class="profile-mark" src="assets/bridanx-mark.svg" alt="BridanX"></div></header>
  <section class="view active" id="overview">
   <div class="notice">Welcome to your business workspace. Add your first transaction, sale, product or customer to get started.</div>
   <section class="card" id="bxAssistant" style="margin:0 0 20px;border-color:#237267;background:linear-gradient(135deg,#10343b,#0c2230)">
