@@ -87,6 +87,7 @@
   <article class="card"><div class="section-head"><div><h2>Balance sheet</h2><p>Assets, liabilities and equity</p></div><button class="btn" data-acct-print="balance">Print</button></div><div id="balanceSheet"></div></article>
  </div>
  <div class="card" style="margin-bottom:16px"><div class="section-head"><div><h2>General ledger</h2><p>Account-by-account journal history</p></div><button class="btn" data-acct-print="ledger">Print</button></div><div class="table-wrap" id="generalLedger"></div></div>
+ <div class="grid report-grid" style="margin-bottom:16px"><article class="card"><div class="section-head"><div><h2>Customer invoices</h2><p>Create invoices, track payments and outstanding balances</p></div><button class="btn primary" id="newInvoice">＋ Create invoice</button></div><div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Customer</th><th>Due</th><th>Total</th><th>Paid</th><th>Balance</th><th>Action</th></tr></thead><tbody id="invoiceRows"></tbody></table></div></article><article class="card"><div class="section-head"><div><h2>Supplier bills</h2><p>Record purchases and amounts owed to suppliers</p></div><button class="btn primary" id="newSupplierBill">＋ Add supplier bill</button></div><div class="table-wrap"><table><thead><tr><th>Bill</th><th>Supplier</th><th>Due</th><th>Total</th><th>Paid</th><th>Balance</th><th>Action</th></tr></thead><tbody id="supplierBillRows"></tbody></table></div></article></div>
  <div class="card"><div class="section-head"><div><h2>Journal entries</h2><p>Review posted and draft entries</p></div></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Reference</th><th>Description</th><th>Status</th><th>Debit</th><th>Credit</th><th>Actions</th></tr></thead><tbody id="journalRows"></tbody></table></div></div>
  <p class="profit-note" style="margin-top:14px">Accounting note: only posted double-entry journals appear in these statements. Existing simple income/expense records and sales are not automatically converted, to avoid inventing accounting classifications. Enter opening balances and historical activity as balanced journal entries before relying on these statements.</p>
 </section>
@@ -199,7 +200,7 @@ const SB_KEY='sb_publishable_xg0I3fVNZCuBLIqnBw-0YA_6yL9QbGC';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
 let authMode='login', currentUser=null, cloudBusy=false, cloudSyncEnabled=true, activationPromise=null;
 
-let accounting={accounts:[],entries:[],lines:[]}, accountingRange={from:'',to:''};
+let accounting={accounts:[],entries:[],lines:[],documents:[]}, accountingRange={from:'',to:''};
 const defaultAccounts=[
  ['1000','Cash on hand','Asset'],['1010','Bank account','Asset'],['1100','Accounts receivable','Asset'],['1200','Inventory asset','Asset'],['1500','Equipment','Asset'],
  ['2000','Accounts payable','Liability'],['2100','Loans payable','Liability'],['2200','Tax payable','Liability'],
@@ -208,10 +209,11 @@ const defaultAccounts=[
 ];
 async function loadAccounting(){
  if(!currentUser)return;
- const [a,e,l]=await Promise.all([
+ const [a,e,l,d]=await Promise.all([
   sb.from('accounting_accounts').select('*').eq('user_id',currentUser.id).order('code'),
   sb.from('journal_entries').select('*').eq('user_id',currentUser.id).order('entry_date',{ascending:false}),
-  sb.from('journal_lines').select('*').eq('user_id',currentUser.id)
+  sb.from('journal_lines').select('*').eq('user_id',currentUser.id),
+  sb.from('accounting_documents').select('*').eq('user_id',currentUser.id).order('issue_date',{ascending:false})
  ]);
  for(const r of [a,e,l])if(r.error)throw r.error;
  if(!(a.data||[]).length){
@@ -220,7 +222,7 @@ async function loadAccounting(){
   if(ins.error)throw ins.error;
   accounting.accounts=ins.data||[];
  }else accounting.accounts=a.data||[];
- accounting.entries=e.data||[];accounting.lines=l.data||[];
+ accounting.entries=e.data||[];accounting.lines=l.data||[];accounting.documents=d.data||[];
  renderAccounting();
 }
 function accountingEntries(){
@@ -246,6 +248,8 @@ function renderAccounting(){
  $('balanceSheet').innerHTML='<b>Assets</b>'+balances.filter(a=>a.account_type==='Asset').map(a=>stmtLine(a.name,a.balance)).join('')+stmtLine('Total assets',totalAssets,'total')+'<b>Liabilities</b>'+balances.filter(a=>a.account_type==='Liability').map(a=>stmtLine(a.name,a.balance)).join('')+stmtLine('Total liabilities',totalLiabilities,'total')+'<b>Equity</b>'+balances.filter(a=>a.account_type==='Equity').map(a=>stmtLine(a.name,a.balance)).join('')+stmtLine('Current period profit / loss',profit)+stmtLine('Total equity',equity,'total')+stmtLine('Liabilities + equity',totalLiabilities+equity,'total')+'<div class="statement-note">The balance sheet balances when opening balances and all relevant activity have been entered correctly.</div>';
  $('trialBalance').innerHTML='<table><thead><tr><th>Code</th><th>Account</th><th>Debit</th><th>Credit</th></tr></thead><tbody>'+balances.map(a=>{const dr=['Asset','Expense'].includes(a.account_type)?Math.max(a.balance,0):Math.max(-a.balance,0),cr=['Asset','Expense'].includes(a.account_type)?Math.max(-a.balance,0):Math.max(a.balance,0);return '<tr><td>'+esc(a.code)+'</td><td>'+esc(a.name)+'</td><td>'+money(dr)+'</td><td>'+money(cr)+'</td></tr>'}).join('')+'<tr><th colspan="2">Totals</th><th>'+money(balances.reduce((n,a)=>n+(['Asset','Expense'].includes(a.account_type)?Math.max(a.balance,0):Math.max(-a.balance,0)),0))+'</th><th>'+money(balances.reduce((n,a)=>n+(['Asset','Expense'].includes(a.account_type)?Math.max(-a.balance,0):Math.max(a.balance,0)),0))+'</th></tr></tbody></table>';
  $('generalLedger').innerHTML='<table><thead><tr><th>Date</th><th>Account</th><th>Entry</th><th>Debit</th><th>Credit</th><th>Balance</th></tr></thead><tbody>'+accounting.accounts.map(a=>{let run=0;const ls=accounting.lines.filter(l=>l.account_id===a.id&&entries.some(e=>e.id===l.journal_entry_id)).sort((x,y)=>{const ex=entries.find(z=>z.id===x.journal_entry_id),ey=entries.find(z=>z.id===y.journal_entry_id);return (ex?.entry_date||'').localeCompare(ey?.entry_date||'')});return ls.map(l=>{run+=['Asset','Expense'].includes(a.account_type)?Number(l.debit)-Number(l.credit):Number(l.credit)-Number(l.debit);const e=entries.find(z=>z.id===l.journal_entry_id);return '<tr><td>'+esc(e?.entry_date||'')+'</td><td>'+esc(a.code+' '+a.name)+'</td><td>'+esc(e?.description||'')+'</td><td>'+money(l.debit)+'</td><td>'+money(l.credit)+'</td><td>'+money(run)+'</td></tr>'}).join('')}).join('')+'</tbody></table>';
+ const renderDocs=(type,id)=>accounting.documents.filter(x=>x.document_type===type).map(x=>{const bal=Number(x.amount)-Number(x.amount_paid);return '<tr><td>'+esc(x.document_number)+'</td><td>'+esc(x.party_name)+'</td><td>'+esc(x.due_date||'—')+'</td><td>'+money(x.amount)+'</td><td>'+money(x.amount_paid)+'</td><td>'+money(bal)+'</td><td>'+(x.status==='draft'?'<button class="btn" data-post-doc="'+x.id+'">Post</button>':'')+(x.status==='posted'&&bal>0?'<button class="btn" data-pay-doc="'+x.id+'">Record payment</button>':'')+' <button class="btn" data-print-doc="'+x.id+'">Print</button></td></tr>'}).join('')||'<tr><td colspan="7"><div class="empty">No documents recorded yet.</div></td></tr>';
+ $('invoiceRows').innerHTML=renderDocs('invoice');$('supplierBillRows').innerHTML=renderDocs('supplier_bill');
  $('journalRows').innerHTML=accounting.entries.map(e=>{const ls=accounting.lines.filter(l=>l.journal_entry_id===e.id),dr=ls.reduce((n,l)=>n+Number(l.debit),0),cr=ls.reduce((n,l)=>n+Number(l.credit),0);return '<tr><td>'+esc(e.entry_date)+'</td><td>'+esc(e.reference||'—')+'</td><td>'+esc(e.description)+'</td><td><span class="badge">'+esc(e.status)+'</span></td><td>'+money(dr)+'</td><td>'+money(cr)+'</td><td>'+(e.status==='draft'?'<button class="btn" data-post-journal="'+e.id+'">Post</button> <button class="btn danger" data-delete-journal="'+e.id+'">Delete</button>':'<span class="statement-note">Locked</span>')+'</td></tr>'}).join('')||'<tr><td colspan="7"><div class="empty">No journal entries yet. Create your first balanced entry.</div></td></tr>';
 }
 function openJournal(){
@@ -267,11 +271,60 @@ function openJournal(){
  },{});
  $('addJournalLine').onclick=()=>{$('journalLineFields').insertAdjacentHTML('beforeend',lineHtml())};
 }
+
+function accountId(code){return accounting.accounts.find(a=>a.code===code)?.id}
+async function createPostedJournal(description,reference,date,rows){
+ const {data:head,error}=await sb.from('journal_entries').insert({user_id:currentUser.id,entry_date:date,description,reference,status:'draft'}).select('*').single();
+ if(error)throw error;
+ const payload=rows.map(x=>({...x,user_id:currentUser.id,journal_entry_id:head.id}));
+ const ins=await sb.from('journal_lines').insert(payload);
+ if(ins.error){await sb.from('journal_entries').delete().eq('id',head.id).eq('user_id',currentUser.id);throw ins.error}
+ const post=await sb.from('journal_entries').update({status:'posted'}).eq('id',head.id).eq('user_id',currentUser.id);
+ if(post.error)throw post.error;
+}
+function createDocument(type){
+ const invoice=type==='invoice',title=invoice?'Create customer invoice':'Add supplier bill';
+ const number=(invoice?'INV-':'BILL-')+Date.now().toString().slice(-8);
+ const html=field(invoice?'Customer name':'Supplier name','party_name')+field('Phone (optional)','party_phone','tel',false)+field('Description / items','description')+field('Document number','document_number','text',true,'value="'+number+'"')+field('Issue date','issue_date','date',true,'value="'+new Date().toISOString().slice(0,10)+'"')+field('Due date','due_date','date',false)+field('Total amount','amount','number',true,'min="0.01" step="0.01"');
+ openModal(title,html,async o=>{
+  const {data,error}=await sb.from('accounting_documents').insert({user_id:currentUser.id,document_type:type,document_number:o.document_number,party_name:o.party_name,party_phone:o.party_phone||null,description:o.description,issue_date:o.issue_date,due_date:o.due_date||null,amount:Number(o.amount),status:'draft'}).select('*').single();
+  if(error){alert(error.message);return} await loadAccounting();
+ },{});
+}
+async function postDocument(id){
+ const doc=accounting.documents.find(x=>x.id===id);if(!doc||doc.status!=='draft')return;
+ const invoice=doc.document_type==='invoice';
+ const debit=accountId(invoice?'1100':'5000'),credit=accountId(invoice?'4000':'2000');
+ if(!debit||!credit){alert('Required accounts are missing.');return}
+ try{
+  await createPostedJournal((invoice?'Invoice ':'Supplier bill ')+doc.document_number,doc.document_number,doc.issue_date,[{account_id:debit,debit:Number(doc.amount),credit:0},{account_id:credit,debit:0,credit:Number(doc.amount)}]);
+  const {error}=await sb.from('accounting_documents').update({status:'posted'}).eq('id',id).eq('user_id',currentUser.id);
+  if(error)throw error;await loadAccounting();
+ }catch(e){alert('Could not post document: '+e.message)}
+}
+function recordDocumentPayment(id){
+ const doc=accounting.documents.find(x=>x.id===id);if(!doc||doc.status!=='posted')return;
+ const remaining=Number(doc.amount)-Number(doc.amount_paid),invoice=doc.document_type==='invoice';
+ const html=field('Payment date','payment_date','date',true,'value="'+new Date().toISOString().slice(0,10)+'"')+field('Amount received / paid','payment_amount','number',true,'min="0.01" max="'+remaining+'" step="0.01"')+select('Cash or bank account','cash_account',['1000 · Cash on hand','1010 · Bank account']);
+ openModal('Record payment · '+esc(doc.document_number),html,async o=>{
+  const amount=Number(o.payment_amount);if(!(amount>0)||amount>remaining){alert('Enter a valid amount up to '+money(remaining));return}
+  const cashCode=o.cash_account.startsWith('1010')?'1010':'1000',cash=accountId(cashCode),counter=accountId(invoice?'1100':'2000');
+  try{
+   await createPostedJournal((invoice?'Customer payment ':'Supplier payment ')+doc.document_number,doc.document_number,o.payment_date,invoice?[{account_id:cash,debit:amount,credit:0},{account_id:counter,debit:0,credit:amount}]:[{account_id:counter,debit:amount,credit:0},{account_id:cash,debit:0,credit:amount}]);
+   const paid=Number(doc.amount_paid)+amount, status=paid>=Number(doc.amount)-0.005?'paid':'posted';
+   const {error}=await sb.from('accounting_documents').update({amount_paid:paid,status}).eq('id',id).eq('user_id',currentUser.id);if(error)throw error;await loadAccounting();
+  }catch(e){alert('Payment could not be recorded: '+e.message)}
+ },{});
+}
+$('newInvoice').onclick=()=>createDocument('invoice');$('newSupplierBill').onclick=()=>createDocument('supplier_bill');
 $('newJournal').onclick=()=>openJournal();
 $('acctApply').onclick=()=>{accountingRange={from:$('acctFrom').value,to:$('acctTo').value};renderAccounting()};
 $('acctAll').onclick=()=>{accountingRange={from:'',to:''};$('acctFrom').value='';$('acctTo').value='';renderAccounting()};
 document.addEventListener('click',async e=>{
- const post=e.target.closest('[data-post-journal]'),del=e.target.closest('[data-delete-journal]'),prt=e.target.closest('[data-acct-print]');
+ const post=e.target.closest('[data-post-journal]'),del=e.target.closest('[data-delete-journal]'),prt=e.target.closest('[data-acct-print]'),docPost=e.target.closest('[data-post-doc]'),docPay=e.target.closest('[data-pay-doc]'),docPrint=e.target.closest('[data-print-doc]');
+ if(docPost)await postDocument(docPost.dataset.postDoc);
+ if(docPay)recordDocumentPayment(docPay.dataset.payDoc);
+ if(docPrint){const d=accounting.documents.find(x=>x.id===docPrint.dataset.printDoc);if(d){const w=window.open('','_blank');if(w){w.document.write('<html><body style="font:14px Arial;margin:40px"><h1>'+esc(businessProfile.business_name||'Business')+'</h1><h2>'+esc(d.document_type==='invoice'?'INVOICE':'SUPPLIER BILL')+'</h2><p>Number: '+esc(d.document_number)+'</p><p>Party: '+esc(d.party_name)+'</p><p>Description: '+esc(d.description)+'</p><p>Issue date: '+esc(d.issue_date)+'</p><p>Due date: '+esc(d.due_date||'—')+'</p><h3>Total: '+money(d.amount)+'</h3><p>Paid: '+money(d.amount_paid)+' | Balance: '+money(Number(d.amount)-Number(d.amount_paid))+'</p><script>window.onload=()=>window.print()<\\/script></body></html>');w.document.close()}}}
  if(post){const id=post.dataset.postJournal;const {error}=await sb.from('journal_entries').update({status:'posted'}).eq('id',id).eq('user_id',currentUser.id);if(error)alert(error.message);else await loadAccounting()}
  if(del){const id=del.dataset.deleteJournal;if(confirm('Delete this journal entry and its lines?')){const {error}=await sb.from('journal_entries').delete().eq('id',id).eq('user_id',currentUser.id);if(error)alert(error.message);else await loadAccounting()}}
  if(prt){const ids={income:'incomeStatement',cash:'cashFlowStatement',trial:'trialBalance',balance:'balanceSheet',ledger:'generalLedger'};const el=$(ids[prt.dataset.acctPrint]);const win=window.open('','_blank');if(!win){alert('Allow pop-ups to print this statement.');return}win.document.write('<html><head><title>BridanX Financial Statement</title><style>body{font:13px Arial;margin:30px;color:#172b36}table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid #ddd;text-align:left}.statement-line{display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid #ddd}.statement-line span{color:#555}</style></head><body><h1>'+esc(businessProfile.business_name||'Business')+'</h1><h2>'+esc(prt.dataset.acctPrint.toUpperCase())+'</h2>'+el.innerHTML+'<script>window.onload=()=>window.print()<\/script></body></html>');win.document.close()}
