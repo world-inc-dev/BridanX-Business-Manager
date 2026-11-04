@@ -45,6 +45,7 @@
  <button data-view="inventory"><span class="ico">▦</span>Inventory</button>
  <button data-view="customers"><span class="ico">♙</span>Customers</button><button data-view="debts"><span class="ico">₦</span>Customer debts</button>
  <button data-view="reports"><span class="ico">▥</span>Reports</button><button data-view="accounting"><span class="ico">▣</span>Accounting</button><button data-view="payroll"><span class="ico">♙</span>Payroll</button><button data-view="suppliers"><span class="ico">▧</span>Suppliers</button><button data-view="audit"><span class="ico">◷</span>Activity log</button><button data-view="settings"><span class="ico">⚙</span>Business settings</button>
+ <button data-view="plans"><span class="ico">◇</span>Plans & subscription</button>
  </nav></div>
  <div class="side-bottom"><b>BridanX Digital Business Hub</b>One clear view of your business. Your records are saved in this browser on this device.</div>
 </aside>
@@ -108,7 +109,31 @@
 </section>
 <section class="view" id="suppliers"><div class="section-head"><div><h2>Suppliers</h2><p>Keep supplier contacts and purchase relationships in one place.</p></div><button class="btn primary" id="addSupplier">＋ Add supplier</button></div><div class="card table-card"><div class="table-wrap"><table><thead><tr><th>Supplier</th><th>Phone</th><th>Email</th><th>Address</th><th>Notes</th><th>Actions</th></tr></thead><tbody id="supplierRows"></tbody></table></div></div></section>
 <section class="view" id="audit"><div class="section-head"><div><h2>Business activity log</h2><p>Review changes to key business records, including who owns the records and when the change happened.</p></div><button class="btn" id="refreshAudit">↻ Refresh</button></div><div class="card table-card"><div class="table-wrap"><table><thead><tr><th>When</th><th>Area</th><th>Action</th><th>Record</th><th>Details</th></tr></thead><tbody id="auditRows"></tbody></table></div></div><p class="statement-note">The activity log is append-only through the application. It records changes made to supported business tables; it does not reconstruct older activity from before logging was enabled.</p></section>
-<section class="view" id="settings"><div class="section-head"><div><h2>Business profile</h2><p>Manage your business identity and contact details.</p></div></div><div class="card"><form id="profileForm"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px"><div class="field"><label>Business name</label><input id="profileName" required maxlength="100"></div><div class="field"><label>Country</label><select id="profileCountry" required></select></div><div class="field"><label>Display currency</label><select id="profileCurrency" required></select></div><div class="field"><label>Business phone</label><input id="profilePhone" type="tel"></div><div class="field"><label>Business email</label><input id="profileEmail" type="email"></div></div><div class="form-actions"><button class="btn primary">Save business profile</button></div><div id="profileMessage" style="font-size:12px;color:var(--muted);margin-top:10px"></div></form></div></section></main></div>
+<section class="view" id="settings"><div class="section-head"><div><h2>Business profile</h2><p>Manage your business identity and contact details.</p></div></div><div class="card"><form id="profileForm"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px"><div class="field"><label>Business name</label><input id="profileName" required maxlength="100"></div><div class="field"><label>Country</label><select id="profileCountry" required></select></div><div class="field"><label>Display currency</label><select id="profileCurrency" required></select></div><div class="field"><label>Business phone</label><input id="profilePhone" type="tel"></div><div class="field"><label>Business email</label><input id="profileEmail" type="email"></div></div><div class="form-actions"><button class="btn primary">Save business profile</button></div><div id="profileMessage" style="font-size:12px;color:var(--muted);margin-top:10px"></div></form></div></section>
+<section class="view" id="plans">
+ <div class="section-head"><div><h2>Plans & subscription</h2><p>Choose the tools that match the way your business operates.</p></div></div>
+ <div class="notice" style="margin-bottom:18px">Payments are checked manually before a paid plan is confirmed. Keep your PesaJet transaction reference after paying.</div>
+ <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px">
+  <article class="card"><div class="eyebrow">START SIMPLE</div><h2>Free</h2><div class="stat-value" style="font-size:28px">UGX 0 / NGN 0</div><p class="muted">Forever</p><ul><li>Basic sales and expenses</li><li>Customer records</li><li>Business overview</li></ul></article>
+  <article class="card" style="border-color:#237267"><div class="eyebrow">FOR GROWING BUSINESSES</div><h2>Starter</h2><div class="stat-value" id="starterPrice" style="font-size:28px">UGX 15,000</div><p id="starterPeriod" class="muted">per month</p><ul><li>Everything in Free</li><li>Inventory management</li><li>Customer debts</li><li>Business reports</li></ul><button class="btn primary" type="button" id="chooseStarter">Choose Starter</button></article>
+  <article class="card"><div class="eyebrow">ADVANCED OPERATIONS</div><h2>Professional</h2><div class="stat-value" id="proPrice" style="font-size:28px">UGX 30,000</div><p id="proPeriod" class="muted">per month</p><ul><li>Everything in Starter</li><li>Full accounting</li><li>Payroll and suppliers</li><li>Attendance and advanced reports</li><li>AI assistant</li></ul><button class="btn primary" type="button" id="choosePro">Choose Professional</button></article>
+ </div>
+ <div class="card" style="margin-top:16px"><div class="section-head"><div><h2>Request a paid subscription</h2><p>Pay through PesaJet, then submit your transaction reference for checking.</p></div></div>
+ <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
+  <div class="field"><label for="subPlan">Plan</label><select id="subPlan"><option>Starter</option><option>Professional</option></select></div>
+  <div class="field"><label for="subCycle">Billing</label><select id="subCycle"><option value="monthly">Monthly</option><option value="annual">Annual (2 months free)</option></select></div>
+  <div class="field"><label for="subCurrency">Currency</label><select id="subCurrency"><option value="UGX">Ugandan shillings (UGX)</option><option value="NGN">Nigerian naira (NGN)</option></select></div>
+ </div>
+ <div class="notice" id="subAmount" style="margin:12px 0">Amount to pay: UGX 15,000</div>
+ <button class="btn primary" type="button" id="pesajetPay">Pay with PesaJet</button>
+ <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:18px">
+  <div class="field"><label for="subBusiness">Business name</label><input id="subBusiness" maxlength="100" placeholder="Your business name"></div>
+  <div class="field"><label for="subContact">Your email or phone</label><input id="subContact" maxlength="120" placeholder="Contact used for your account"></div>
+  <div class="field"><label for="subReference">PesaJet transaction reference</label><input id="subReference" maxlength="120" placeholder="Enter the payment reference"></div>
+ </div>
+ <button class="btn" type="button" id="subSubmit">Submit payment for verification</button>
+ <p class="muted" style="font-size:12px;margin-top:10px">Submitting a reference does not activate a subscription. Our team will verify the payment and confirm your plan.</p><div id="subMessage" aria-live="polite" style="font-size:12px;margin-top:8px"></div></div>
+</section></main></div>
 <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitle">Add record</h3><button class="close" id="closeModal">×</button></div><form id="recordForm"></form></div></div>
 <script>
 const KEY='bridanx-business-manager-v1', CURRENCY_KEY='bridanx-business-manager-currency';
@@ -245,6 +270,15 @@ $('exportPdf').onclick=()=>{const win=window.open('','_blank');if(!win){alert('P
 $('nav').onclick=e=>{const b=e.target.closest('button[data-view]');if(!b)return;document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===b.dataset.view));$('pageTitle').textContent=b.textContent.trim();$('sidebar').classList.remove('open')};
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>document.querySelector('[data-view="'+b.dataset.go+'"]').click());
 $('menuBtn').onclick=()=>$('sidebar').classList.toggle('open');
+const subscriptionPrices={UGX:{Starter:{monthly:15000,annual:150000},Professional:{monthly:30000,annual:300000}},NGN:{Starter:{monthly:4500,annual:45000},Professional:{monthly:9000,annual:90000}}};
+function subscriptionAmount(){return subscriptionPrices[$('subCurrency').value][$('subPlan').value][$('subCycle').value];}
+function refreshSubscriptionPrice(){const cur=$('subCurrency').value,cycle=$('subCycle').value,a=subscriptionAmount();$('subAmount').textContent='Amount to pay: '+cur+' '+a.toLocaleString('en-US');$('starterPrice').textContent=cur+' '+subscriptionPrices[cur].Starter[cycle].toLocaleString('en-US');$('proPrice').textContent=cur+' '+subscriptionPrices[cur].Professional[cycle].toLocaleString('en-US');$('starterPeriod').textContent=cycle==='annual'?'per year':'per month';$('proPeriod').textContent=cycle==='annual'?'per year':'per month';}
+$('chooseStarter').onclick=()=>{$('subPlan').value='Starter';refreshSubscriptionPrice();$('subPlan').scrollIntoView({behavior:'smooth'});};
+$('choosePro').onclick=()=>{$('subPlan').value='Professional';refreshSubscriptionPrice();$('subPlan').scrollIntoView({behavior:'smooth'});};
+['subPlan','subCycle','subCurrency'].forEach(id=>$(id).addEventListener('change',refreshSubscriptionPrice));
+$('pesajetPay').onclick=()=>{const amount=subscriptionAmount();window.open('https://pay.pesajet.com/pay/a1083c66a9','_blank','noopener');$('subMessage').textContent='Enter exactly '+$('subCurrency').value+' '+amount.toLocaleString('en-US')+' on the PesaJet payment page.';};
+$('subSubmit').onclick=()=>{const business=$('subBusiness').value.trim(),contact=$('subContact').value.trim(),reference=$('subReference').value.trim(),plan=$('subPlan').value,cycle=$('subCycle').value,currency=$('subCurrency').value,amount=subscriptionAmount();if(!business||!contact||!reference){$('subMessage').textContent='Please enter your business name, contact and PesaJet transaction reference.';return;}const msg='BridanX Business Manager subscription payment verification request\nBusiness: '+business+'\nContact: '+contact+'\nPlan: '+plan+'\nBilling: '+cycle+'\nAmount: '+currency+' '+amount.toLocaleString('en-US')+'\nPesaJet reference: '+reference;window.open('https://wa.me/256761537538?text='+encodeURIComponent(msg),'_blank','noopener');$('subMessage').textContent='WhatsApp opened with your verification request. Send the message so the payment can be checked.';};
+refreshSubscriptionPrice();
 $('today').textContent=new Date().toLocaleDateString('en-UG',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
 render();
 </script>
