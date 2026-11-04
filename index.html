@@ -44,7 +44,7 @@
  <button data-view="sales"><span class="ico">▤</span>Sales</button>
  <button data-view="inventory"><span class="ico">▦</span>Inventory</button>
  <button data-view="customers"><span class="ico">♙</span>Customers</button>
- <button data-view="reports"><span class="ico">▥</span>Reports</button>
+ <button data-view="reports"><span class="ico">▥</span>Reports</button><button data-view="settings"><span class="ico">⚙</span>Business settings</button>
  </nav></div>
  <div class="side-bottom"><b>BridanX Digital Business Hub</b>One clear view of your business. Your records are saved in this browser on this device.</div>
 </aside>
@@ -70,7 +70,7 @@
  <section class="view" id="inventory"><div class="section-head"><div><h2>Inventory</h2><p>Monitor products and available stock.</p></div><button class="btn primary" id="addProduct">＋ Add product</button></div><div class="card table-card"><div class="table-wrap"><table><thead><tr><th>Product</th><th>SKU</th><th>Quantity</th><th>Unit price</th><th>Stock value</th><th>Actions</th></tr></thead><tbody id="inventoryRows"></tbody></table></div></div></section>
  <section class="view" id="customers"><div class="section-head"><div><h2>Customers</h2><p>Organise your customer contacts in one place.</p></div><button class="btn primary" id="addCustomer">＋ Add customer</button></div><div class="card table-card"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Added</th><th>Actions</th></tr></thead><tbody id="customerRows"></tbody></table></div></div></section>
  <section class="view" id="reports"><div class="section-head"><div><h2>Business reports</h2><p>A simple summary of the records entered so far.</p></div><button class="btn" id="exportCsv">↓ Export transactions</button></div><div class="grid report-grid"><article class="card report-item"><span>Total income</span><strong id="reportIncome">₦0</strong></article><article class="card report-item"><span>Total expenses</span><strong id="reportExpenses">₦0</strong></article><article class="card report-item"><span>Net profit / loss</span><strong id="reportProfit">₦0</strong></article><article class="card report-item"><span>Inventory value</span><strong id="reportStock">₦0</strong></article></div></section>
-</main></div>
+<section class="view" id="settings"><div class="section-head"><div><h2>Business profile</h2><p>Manage your business identity and contact details.</p></div></div><div class="card"><form id="profileForm"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px"><div class="field"><label>Business name</label><input id="profileName" required maxlength="100"></div><div class="field"><label>Country</label><select id="profileCountry" required></select></div><div class="field"><label>Display currency</label><select id="profileCurrency" required></select></div><div class="field"><label>Business phone</label><input id="profilePhone" type="tel"></div><div class="field"><label>Business email</label><input id="profileEmail" type="email"></div></div><div class="form-actions"><button class="btn primary">Save business profile</button></div><div id="profileMessage" style="font-size:12px;color:var(--muted);margin-top:10px"></div></form></div></section></main></div>
 <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitle">Add record</h3><button class="close" id="closeModal">×</button></div><form id="recordForm"></form></div></div>
 <script>
 const KEY='bridanx-business-manager-v1', CURRENCY_KEY='bridanx-business-manager-currency';
@@ -81,6 +81,7 @@ const currencies=[
  ['Nigeria','NGN','en-NG'],['Uganda','UGX','en-UG'],['Kenya','KES','en-KE'],['Tanzania','TZS','sw-TZ'],['Rwanda','RWF','rw-RW'],['Ghana','GHS','en-GH'],['South Africa','ZAR','en-ZA'],['Egypt','EGP','ar-EG'],['Zambia','ZMW','en-ZM'],['Malawi','MWK','en-MW'],['Zimbabwe','ZiG','en-ZW'],['Botswana','BWP','en-BW'],['Namibia','NAD','en-NA'],['Ethiopia','ETB','am-ET'],['Morocco','MAD','ar-MA'],['Senegal','XOF','fr-SN'],['Cameroon','XAF','fr-CM'],['United States','USD','en-US'],['United Kingdom','GBP','en-GB'],['Eurozone','EUR','en-IE'],['Canada','CAD','en-CA'],['Australia','AUD','en-AU'],['India','INR','en-IN'],['China','CNY','zh-CN'],['Japan','JPY','ja-JP'],['United Arab Emirates','AED','en-AE'],['Saudi Arabia','SAR','en-SA'],['Brazil','BRL','pt-BR'],['Switzerland','CHF','de-CH']
 ];
 let currencyCode=localStorage.getItem(CURRENCY_KEY)||'NGN';
+let businessProfile={business_name:'My Business',country_code:'NG',currency_code:currencyCode,contact_phone:'',contact_email:''};
 function currencyInfo(){return currencies.find(x=>x[1]===currencyCode)||currencies[0]}
 function money(n){const [country,code,locale]=currencyInfo();try{return new Intl.NumberFormat(locale,{style:'currency',currency:code,maximumFractionDigits:2}).format(Number(n||0))}catch(e){return code+' '+Number(n||0).toLocaleString()}}
 function updateCurrencyLabels(){document.querySelectorAll('[data-currency-label]').forEach(el=>el.textContent=currencyCode);}
@@ -109,6 +110,10 @@ currencySelect.value=currencyCode;
 currencySelect.onchange=()=>{currencyCode=currencySelect.value;localStorage.setItem(CURRENCY_KEY,currencyCode);$('profileCurrency').value=currencyCode;updateCurrencyLabels();render()};
 updateCurrencyLabels();
 const today=()=>new Date().toISOString().slice(0,10);
+const countryOptions=[['Nigeria','NG'],['Uganda','UG'],['Kenya','KE'],['Tanzania','TZ'],['Rwanda','RW'],['Ghana','GH'],['South Africa','ZA'],['Egypt','EG'],['Zambia','ZM'],['Malawi','MW'],['Zimbabwe','ZW'],['Botswana','BW'],['Namibia','NA'],['Ethiopia','ET'],['Morocco','MA'],['Senegal','SN'],['Cameroon','CM'],['United States','US'],['United Kingdom','GB'],['Canada','CA'],['Australia','AU'],['India','IN'],['China','CN'],['Japan','JP'],['United Arab Emirates','AE'],['Saudi Arabia','SA'],['Brazil','BR'],['Switzerland','CH']];
+$('profileCountry').innerHTML=countryOptions.map(x=>'<option value="'+x[1]+'">'+x[0]+'</option>').join('');
+$('profileCurrency').innerHTML=currencies.map(x=>'<option value="'+x[1]+'">'+x[0]+' ('+x[1]+')</option>').join('');
+function showBusinessProfile(){ $('profileName').value=businessProfile.business_name||'';$('profileCountry').value=businessProfile.country_code||'NG';$('profileCurrency').value=businessProfile.currency_code||currencyCode;$('profilePhone').value=businessProfile.contact_phone||'';$('profileEmail').value=businessProfile.contact_email||currentUser?.email||'';}
 function field(label,name,type='text',required=true,extra=''){return '<div class="field"><label>'+label+'</label><input name="'+name+'" type="'+type+'" '+(required?'required':'')+' '+extra+'></div>'}
 function select(label,name,options){return '<div class="field"><label>'+label+'</label><select name="'+name+'">'+options.map(x=>'<option>'+x+'</option>').join('')+'</select></div>'}
 function openModal(title,fields,onSave,initial={}){$('modalTitle').textContent=title;$('recordForm').innerHTML=fields+'<div class="form-actions"><button type="button" class="btn" id="cancelForm">Cancel</button><button class="btn primary">Save record</button></div>';Object.entries(initial||{}).forEach(([k,v])=>{const el=$('recordForm').elements.namedItem(k);if(el&&v!=null)el.value=v});$('modalBackdrop').classList.add('open');$('cancelForm').onclick=closeModal;$('recordForm').onsubmit=e=>{e.preventDefault();const obj=Object.fromEntries(new FormData(e.target));onSave(obj);closeModal();save()}}
@@ -262,7 +267,7 @@ async function loadCloudData(){
    const {error}=await sb.from('business_profiles').upsert({user_id:currentUser.id,...businessProfile});
    if(error)throw error;
   }else businessProfile={...businessProfile,...profile};
-  currencyCode=businessProfile.currency_code||currencyCode;localStorage.setItem(CURRENCY_KEY,currencyCode);currencySelect.value=currencyCode;showBusinessProfile();render();}
+  currencyCode=businessProfile.currency_code||currencyCode;localStorage.setItem(CURRENCY_KEY,currencyCode);currencySelect.value=currencyCode;showBusinessProfile();render();
  }catch(err){console.error(err);alert('Cloud sync could not finish: '+err.message+'. Your browser records are still kept on this device.');}
 }
 function dbRows(table,items){
