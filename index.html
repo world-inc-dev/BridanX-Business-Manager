@@ -114,11 +114,29 @@ data={transactions:Array.isArray(data.transactions)?data.transactions:[],sales:A
 const $=id=>document.getElementById(id);
 const countryCodes='AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW'.split(' ');
 const regionNames=new Intl.DisplayNames(['en'],{type:'region'});
-const countryOptions=countryCodes.map(code=>[regionNames.of(code)||code,code]).sort((a,b)=>a[0].localeCompare(b[0]));
+const eastAfricaPriority=['UG','KE','TZ','RW','BI','CD','SS','ET','SO','DJ','ER','SD','SC','KM','MG','MW','MZ','ZM'];
+const countryOptions=countryCodes.map(code=>[regionNames.of(code)||code,code]).sort((a,b)=>{
+ const ai=eastAfricaPriority.indexOf(a[1]),bi=eastAfricaPriority.indexOf(b[1]);
+ if(ai!==-1||bi!==-1)return (ai===-1?999:ai)-(bi===-1?999:bi);
+ return a[0].localeCompare(b[0]);
+});
+const countryCurrency={
+ UG:'UGX',KE:'KES',TZ:'TZS',RW:'RWF',BI:'BIF',CD:'CDF',SS:'SSP',
+ ET:'ETB',SO:'SOS',DJ:'DJF',ER:'ERN',SD:'SDG',SC:'SCR',KM:'KMF',
+ MG:'MGA',MW:'MWK',MZ:'MZN',ZM:'ZMW',ZW:'ZWG',NG:'NGN',GH:'GHS',
+ ZA:'ZAR',EG:'EGP',US:'USD',GB:'GBP',CA:'CAD',AU:'AUD',IN:'INR',
+ JP:'JPY',CN:'CNY',AE:'AED',SA:'SAR',EU:'EUR',CH:'CHF'
+};
+function currencyForCountry(code){
+ const preferred=countryCurrency[code];
+ return preferred&&currencies.some(x=>x[1]===preferred)?preferred:
+ (code==='FR'||code==='DE'||code==='IT'||code==='ES'||code==='NL'||code==='BE'||code==='IE'||code==='PT'||code==='AT'||code==='FI'||code==='GR'||code==='LU'||code==='SK'||code==='SI'||code==='CY'||code==='EE'||code==='LV'||code==='LT'||code==='MT'?'EUR':
+ code==='US'?'USD':'USD');
+}
 const currencyNames=new Intl.DisplayNames(['en'],{type:'currency'});
 const currencies=(typeof Intl.supportedValuesOf==='function'?Intl.supportedValuesOf('currency'):['USD','EUR','GBP','NGN','UGX','KES','TZS','ZAR','GHS','CAD','AUD','INR','JPY','CNY']).map(code=>[currencyNames.of(code)||code,code,'en']);
-let currencyCode=localStorage.getItem(CURRENCY_KEY)||'USD';
-let businessProfile={business_name:'My Business',country_code:'US',currency_code:currencyCode,contact_phone:'',contact_email:''};
+let currencyCode=localStorage.getItem(CURRENCY_KEY)||'UGX';
+let businessProfile={business_name:'My Business',country_code:'UG',currency_code:currencyCode,contact_phone:'',contact_email:''};
 function currencyInfo(){return currencies.find(x=>x[1]===currencyCode)||['US Dollar','USD','en']}
 function money(n){const [country,code,locale]=currencyInfo();try{return new Intl.NumberFormat(navigator.language||'en',{style:'currency',currency:code,maximumFractionDigits:2}).format(Number(n||0))}catch(e){return code+' '+Number(n||0).toLocaleString()}}
 function updateCurrencyLabels(){document.querySelectorAll('[data-currency-label]').forEach(el=>el.textContent=currencyCode);}
@@ -160,7 +178,26 @@ updateCurrencyLabels();
 const today=()=>new Date().toISOString().slice(0,10);
 $('profileCountry').innerHTML=countryOptions.map(x=>'<option value="'+x[1]+'">'+x[0]+'</option>').join('');
 $('profileCurrency').innerHTML=currencies.map(x=>'<option value="'+x[1]+'">'+x[0]+' ('+x[1]+')</option>').join('');
-function showBusinessProfile(){ $('profileName').value=businessProfile.business_name||'';$('profileCountry').value=businessProfile.country_code||'US';$('profileCurrency').value=businessProfile.currency_code||currencyCode;$('profilePhone').value=businessProfile.contact_phone||'';$('profileEmail').value=businessProfile.contact_email||currentUser?.email||'';}
+function applyCountryCurrency(code){
+ const preferred=currencyForCountry(code);
+ if(!preferred)return;
+ currencyCode=preferred;businessProfile.country_code=code;businessProfile.currency_code=preferred;
+ $('profileCurrency').value=preferred;currencySelect.value=preferred;
+ localStorage.setItem(CURRENCY_KEY,preferred);updateCurrencyLabels();render();
+}
+$('profileCountry').addEventListener('change',e=>applyCountryCurrency(e.target.value));
+$('profileCurrency').addEventListener('change',e=>{
+ currencyCode=e.target.value;businessProfile.currency_code=currencyCode;
+ currencySelect.value=currencyCode;localStorage.setItem(CURRENCY_KEY,currencyCode);
+ updateCurrencyLabels();render();
+});
+function showBusinessProfile(){
+ $('profileName').value=businessProfile.business_name||'';
+ $('profileCountry').value=businessProfile.country_code||'UG';
+ $('profileCurrency').value=businessProfile.currency_code||currencyCode;
+ $('profilePhone').value=businessProfile.contact_phone||'';
+ $('profileEmail').value=businessProfile.contact_email||currentUser?.email||'';
+}
 function field(label,name,type='text',required=true,extra=''){return '<div class="field"><label>'+label+'</label><input name="'+name+'" type="'+type+'" '+(required?'required':'')+' '+extra+'></div>'}
 function select(label,name,options){return '<div class="field"><label>'+label+'</label><select name="'+name+'">'+options.map(x=>'<option>'+x+'</option>').join('')+'</select></div>'}
 function openModal(title,fields,onSave,initial={}){$('modalTitle').textContent=title;$('recordForm').innerHTML=fields+'<div class="form-actions"><button type="button" class="btn" id="cancelForm">Cancel</button><button class="btn primary">Save record</button></div>';Object.entries(initial||{}).forEach(([k,v])=>{const el=$('recordForm').elements.namedItem(k);if(el&&v!=null)el.value=v});$('modalBackdrop').classList.add('open');$('cancelForm').onclick=closeModal;$('recordForm').onsubmit=e=>{e.preventDefault();const obj=Object.fromEntries(new FormData(e.target));onSave(obj);closeModal();save()}}
@@ -517,7 +554,7 @@ async function saveBusinessProfile(){
  if(!payload.business_name){message.textContent='Please enter your business name.';return}
  const {error}=await sb.from('business_profiles').upsert({user_id:currentUser.id,...payload});
  if(error){message.textContent='Could not save: '+error.message;return}
- businessProfile={...businessProfile,...payload};currencyCode=payload.currency_code;localStorage.setItem(CURRENCY_KEY,currencyCode);currencySelect.value=currencyCode;updateCurrencyLabels();render();message.textContent='Business profile saved successfully.';
+ businessProfile={...businessProfile,...payload};currencyCode=payload.currency_code;businessProfile={...businessProfile,...payload};localStorage.setItem(CURRENCY_KEY,currencyCode);currencySelect.value=currencyCode;updateCurrencyLabels();render();message.textContent='Business profile saved successfully.';
 }
 $('profileForm').addEventListener('submit',async e=>{e.preventDefault();await saveBusinessProfile()});
 function rowWithId(x){return {...x,id:x.id||uid()}}
@@ -578,7 +615,7 @@ async function loadCloudData(){
    const {error}=await sb.from('business_profiles').upsert({user_id:currentUser.id,...businessProfile});
    if(error)throw error;
   }else businessProfile={...businessProfile,...profile};
-  currencyCode=businessProfile.currency_code||currencyCode;localStorage.setItem(CURRENCY_KEY,currencyCode);currencySelect.value=currencyCode;showBusinessProfile();render();
+  currencyCode=businessProfile.currency_code||currencyForCountry(businessProfile.country_code||'UG');localStorage.setItem(CURRENCY_KEY,currencyCode);currencySelect.value=currencyCode;showBusinessProfile();render();
  }catch(err){console.error(err);alert('Cloud sync could not finish: '+err.message+'. Your browser records are still kept on this device.');}
 }
 function dbRows(table,items){
