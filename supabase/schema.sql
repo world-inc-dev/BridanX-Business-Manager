@@ -9,6 +9,8 @@ create table if not exists public.business_profiles (
   business_name text not null default 'My Business',
   country_code text not null default 'NG',
   currency_code text not null default 'NGN',
+  contact_phone text,
+  contact_email text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
