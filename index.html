@@ -142,7 +142,8 @@ async function deleteRecord(table,id){
  data[key]=data[key].filter(x=>x!==item);save();
 }
 document.addEventListener('click',e=>{const edit=e.target.closest('[data-edit]'),del=e.target.closest('[data-delete]');if(edit)editRecord(edit.dataset.edit,edit.dataset.id);if(del)deleteRecord(del.dataset.delete,del.dataset.id)});
-\n$('transactionSearch').oninput=render;
+
+$('transactionSearch').oninput=render;
 $('exportCsv').onclick=()=>{const rows=[['Description','Category','Type','Date','Amount'],...data.transactions.map(x=>[x.description,x.category,x.type,x.date,x.amount])];const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='bridanx-transactions.csv';a.click();URL.revokeObjectURL(a.href)};
 $('nav').onclick=e=>{const b=e.target.closest('button[data-view]');if(!b)return;document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===b.dataset.view));$('pageTitle').textContent=b.textContent.trim();$('sidebar').classList.remove('open')};
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>document.querySelector('[data-view="'+b.dataset.go+'"]').click());
@@ -260,7 +261,7 @@ function dbRows(table,items){
   if(table==='transactions')return {...base,description:x.description,category:x.category||'Other',type:x.type,amount:Number(x.amount),transaction_date:x.date};
   if(table==='sales')return {...base,item:x.item,customer:x.customer||null,amount:Number(x.amount),payment_method:x.payment||'Other',sale_date:x.date};
   if(table==='inventory')return {...base,name:x.name,sku:x.sku||null,quantity:Number(x.qty||0),unit_price:Number(x.price||0)};
-  return {...base,name:x.name,phone:x.phone||null,email:x.email||null};
+  return {...base,name:x.name,phone:x.phone||null,email:x.email||null,created_at:x.date?new Date(x.date+'T00:00:00').toISOString():undefined};
  });
 }
 async function syncTable(table,items){
