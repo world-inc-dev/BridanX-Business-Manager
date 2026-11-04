@@ -1308,7 +1308,6 @@ async function loadOperations(){
  for(const x of [sr,ar,lr,hr,mr])if(x.error)throw x.error;
  suppliers=sr.data||[];attendanceRecords=ar.data||[];leaveRequests=lr.data||[];auditRecords=hr.data||[];inventoryMovements=mr.data||[];data.stockMovements=inventoryMovements;
  renderOperations();
- if(businessType==='school')await loadSchoolData();
 }
 
 let schClasses=[],schStudents=[],schPayments=[],schAttendance=[],schExams=[],schResults=[];
@@ -1796,6 +1795,7 @@ async function activateUser(user,openPlansAfterLogin=false){
   for(const [label,loader] of [['Subscription',loadMySubscription],['Business records',loadCloudData]]){
    try{await loader();}catch(error){console.error(label+' failed to load:',error);moduleErrors.push(label);}
   }
+  if(businessType==='school'){try{await loadSchoolData();}catch(error){console.error('School management failed to load:',error);moduleErrors.push('School management');}}
   if(currentPlan==='Professional'){
    for(const [label,loader] of [['Accounting',loadAccounting],['Payroll',loadPayroll],['Business operations',loadOperations]]){
     try{await loader();}catch(error){console.error(label+' failed to load:',error);moduleErrors.push(label);}
