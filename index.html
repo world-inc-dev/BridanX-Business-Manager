@@ -1464,7 +1464,7 @@ if(!window.supabase||typeof window.supabase.createClient!=='function'){authMsg.t
 function setAuthMode(mode){
  authMode=mode;
  document.getElementById('authTitle').textContent=mode==='login'?'Welcome back':'Create your business account';
- document.getElementById('businessField').style.display=mode==='signup'?'grid':'none';document.getElementById('authBusinessTypeField').style.display=mode==='signup'?'grid':'none';
+ document.getElementById('businessField').style.display=mode==='signup'?'grid':'none';document.getElementById('authBusinessTypeField').style.display=mode==='signup'?'grid':'none';document.getElementById('authBusinessType').disabled=mode!=='signup';
  document.getElementById('authPassword').autocomplete=mode==='signup'?'new-password':'current-password';
  document.getElementById('authSubmit').textContent=mode==='signup'?'Create account':'Sign in';
  document.getElementById('showLogin').classList.toggle('primary',mode==='login');
