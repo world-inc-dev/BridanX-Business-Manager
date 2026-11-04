@@ -875,7 +875,9 @@ function openRetailCheckout(){
  const list=products.map(p=>esc(p.name)+' · SKU '+esc(p.sku||'—')+' · Stock '+esc(p.qty||0)+' · '+esc(money(p.price||0))).join('<br>');
  const html='<div class="field"><label>Items (one per line: product name or barcode | quantity | unit price)</label><textarea name="cart_lines" data-cart-lines="true" rows="6" required placeholder="Milk 500ml | 2 | 2500&#10;Bread | 1 | 4000" style="width:100%;min-height:130px"></textarea><div id="cartTotalPreview" style="margin-top:8px;padding:10px;border-radius:8px;background:var(--panel,#0c202d);font-weight:700">Enter items to calculate the checkout total.</div><small style="color:var(--muted)">Use the exact product name or SKU/barcode from Inventory. Each line is calculated as quantity × unit price.</small></div>'+
  '<div class="field"><label>Available inventory</label><div style="font-size:12px;line-height:1.7;max-height:130px;overflow:auto">'+list+'</div></div>'+
- field('Customer name (optional)','customer','text',false)+select('Payment method','payment',['Cash','Mobile Money','Bank transfer','Card','Other'])+field('Date','date','date',true,'value="'+today()+'"');
+ field('Customer name (optional)','customer','text',false)+select('Payment method','payment',['Cash','Mobile Money','Bank transfer','Card','Other'])+
+ field('Amount received ('+currencyCode+')','amount_received','number',true,'min="0" step="0.01" value="0"')+
+ field('Date','date','date',true,'value="'+today()+'")');
  openModal(businessType==='supermarket'?'Supermarket checkout':'Shop checkout',html,o=>{
   const lines=String(o.cart_lines||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
   if(!lines.length){alert('Enter at least one product line.');return false;}
@@ -890,14 +892,17 @@ function openRetailCheckout(){
    if(Number(product.qty||0)<qty){alert('Not enough stock for '+product.name+'. Available: '+Number(product.qty||0)+', requested: '+qty+'.');return false;}
    parsed.push({product,qty,unit});
   }
-  const date=o.date||today(),customer=o.customer||'',payment=o.payment||'Cash',total=parsed.reduce((v,x)=>v+x.qty*x.unit,0);
-  for(const line of parsed){
-   const sale={id:uid(),item:line.product.name,customer,quantity:line.qty,unit_price:line.unit,amount:(line.qty*line.unit).toFixed(2),payment,date,unit_cost_at_sale:Number(line.product.cost||0)||null};
-   if(!applySaleStock(sale))return false;
-   data.sales.push(sale);
-   data.transactions.push({id:uid(),description:(businessType==='supermarket'?'Supermarket':'Shop')+' checkout · '+sale.item+' × '+sale.quantity,category:'Sales',type:'Income',amount:sale.amount,date});
+  const date=o.date||today(),customer=o.customer||'',payment=o.payment||'Cash',total=parsed.reduce((v,x)=>v+x.qty*x.unit,0),received=Number(o.amount_received||0);
+  if(!Number.isFinite(received)||received<total){alert('Amount received must be at least the checkout total of '+money(total)+'.');return false;}
+  const group=uid(),receiptNo='BX-'+String(group).replace(/-/g,'').slice(-8).toUpperCase();
+  const saved=[];
+  for(let i=0;i<parsed.length;i++){
+   const line=parsed[i],sale={id:uid(),receipt_group_id:group,receipt_no:receiptNo,line_no:i+1,receipt_total:total,amount_received:received,change_due:received-total,item:line.product.name,customer,quantity:line.qty,unit_price:line.unit,amount:(line.qty*line.unit).toFixed(2),payment,date,unit_cost_at_sale:Number(line.product.cost||0)||null};
+   if(!applySaleStock(sale)){saved.forEach(x=>reverseSaleStock(x));return false;}
+   saved.push(sale);data.sales.push(sale);
   }
-  alert('Checkout saved: '+parsed.length+' product line(s), total '+money(total)+'. Print each item receipt from Sales.');
+  data.transactions.push({id:uid(),description:(businessType==='supermarket'?'Supermarket':'Shop')+' checkout · '+receiptNo+' · '+parsed.length+' item lines',category:'Sales',type:'Income',amount:total.toFixed(2),date});
+  alert('Checkout saved. Receipt '+receiptNo+' · '+parsed.length+' item lines · Total '+money(total)+'. Print the combined receipt from any item in Sales.');
  });
 }
 function openAgentTransaction(){
@@ -948,17 +953,16 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 function printSaleReceipt(id){
  const sale=data.sales.find(x=>String(x.id||'')===String(id));
  if(!sale){alert('Sale record not found.');return}
- const receiptNo=String(sale.id||'').slice(-8).toUpperCase()||'SALE';
- const business=businessProfile.business_name||currentUser?.user_metadata?.business_name||'My Business';
- const phone=businessProfile.contact_phone||'';
- const qty=Number(sale.quantity||1),amount=Number(sale.amount||0),unit=qty>0?amount/qty:amount;
- const w=window.open('','_blank','width=420,height=700');
- if(!w){alert('Please allow pop-ups for this site to print receipts.');return}
+ const rows=sale.receipt_group_id?data.sales.filter(x=>String(x.receipt_group_id)===String(sale.receipt_group_id)).sort((a,b)=>Number(a.line_no||0)-Number(b.line_no||0)):[sale];
+ const receiptNo=sale.receipt_no||String(sale.id||'').slice(-8).toUpperCase()||'SALE';
+ const business=businessProfile.business_name||currentUser?.user_metadata?.business_name||'My Business',phone=businessProfile.contact_phone||'';
+ const total=Number(sale.receipt_total??rows.reduce((n,x)=>n+Number(x.amount||0),0)),received=Number(sale.amount_received??total),change=Number(sale.change_due??Math.max(0,received-total));
+ const w=window.open('','_blank','width=420,height=700');if(!w){alert('Please allow pop-ups for this site to print receipts.');return}
  const line=(label,value)=>'<div class="line"><span>'+label+'</span><b>'+value+'</b></div>';
+ const body=rows.map(x=>{const q=Number(x.quantity||1),a=Number(x.amount||0),u=Number(x.unit_price??(q?a/q:a));return '<tr><td>'+esc(x.item||'Item')+'</td><td>'+q+'</td><td>'+esc(money(u))+'</td><td>'+esc(money(a))+'</td></tr>'}).join('');
  w.document.open();
- w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Receipt '+esc(receiptNo)+'</title><style>*{box-sizing:border-box}body{font:14px Arial,sans-serif;color:#111;margin:0;padding:22px}.receipt{max-width:360px;margin:auto}.center{text-align:center}.brand{font-size:21px;font-weight:800;margin:0 0 5px}.muted{color:#555;font-size:12px}.rule{border:0;border-top:1px dashed #777;margin:16px 0}.line{display:flex;justify-content:space-between;gap:12px;padding:6px 0;font-size:13px}.line span{color:#444}.line b{text-align:right}.total{font-size:17px;font-weight:800}.items{width:100%;border-collapse:collapse;margin-top:12px}.items th,.items td{text-align:left;padding:8px 4px;border-bottom:1px solid #ddd;font-size:12px}.items th:last-child,.items td:last-child{text-align:right}.thanks{text-align:center;margin-top:24px;font-weight:700}@media print{body{padding:0}.receipt{max-width:none}}</style></head><body><main class="receipt"><header class="center"><h1 class="brand">'+esc(business)+'</h1>'+(phone?'<div class="muted">'+esc(phone)+'</div>':'')+'<div class="muted">SALES RECEIPT</div></header><hr class="rule">'+line('Receipt no.',esc(receiptNo))+line('Date',esc(sale.date||''))+line('Customer',esc(sale.customer||'Walk-in customer'))+(sale.business_detail?line(esc(sale.business_detail_label||'Details'),esc(sale.business_detail)):'')+'<hr class="rule"><table class="items"><thead><tr><th>Item</th><th>Qty</th><th>Unit price</th><th>Total</th></tr></thead><tbody><tr><td>'+esc(sale.item||'Item')+'</td><td>'+qty+'</td><td>'+esc(money(unit))+'</td><td>'+esc(money(amount))+'</td></tr></tbody></table><hr class="rule">'+line('Payment method',esc(sale.payment||'—'))+'<div class="line total"><span>TOTAL PAID</span><b>'+esc(money(amount))+'</b></div><hr class="rule"><div class="thanks">Thank you for your purchase!</div><p class="center muted">Powered by BridanX Business Manager</p></main></body></html>');
- w.document.close();
- setTimeout(()=>{w.focus();w.print()},350);
+ w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Receipt '+esc(receiptNo)+'</title><style>*{box-sizing:border-box}body{font:14px Arial,sans-serif;color:#111;margin:0;padding:22px}.receipt{max-width:360px;margin:auto}.center{text-align:center}.brand{font-size:21px;font-weight:800;margin:0 0 5px}.muted{color:#555;font-size:12px}.rule{border:0;border-top:1px dashed #777;margin:16px 0}.line{display:flex;justify-content:space-between;gap:12px;padding:6px 0;font-size:13px}.line span{color:#444}.line b{text-align:right}.total{font-size:17px;font-weight:800}.items{width:100%;border-collapse:collapse;margin-top:12px}.items th,.items td{text-align:left;padding:8px 4px;border-bottom:1px solid #ddd;font-size:12px}.items th:last-child,.items td:last-child{text-align:right}.thanks{text-align:center;margin-top:24px;font-weight:700}@media print{body{padding:0}.receipt{max-width:none}}</style></head><body><main class="receipt"><header class="center"><h1 class="brand">'+esc(business)+'</h1>'+(phone?'<div class="muted">'+esc(phone)+'</div>':'')+'<div class="muted">SALES RECEIPT</div></header><hr class="rule">'+line('Receipt no.',esc(receiptNo))+line('Date',esc(sale.date||''))+line('Customer',esc(sale.customer||'Walk-in customer'))+'<hr class="rule"><table class="items"><thead><tr><th>Item</th><th>Qty</th><th>Unit price</th><th>Total</th></tr></thead><tbody>'+body+'</tbody></table><hr class="rule">'+line('Payment method',esc(sale.payment||'—'))+'<div class="line total"><span>CHECKOUT TOTAL</span><b>'+esc(money(total))+'</b></div>'+line('Amount received',esc(money(received)))+line('Change due',esc(money(change)))+'<hr class="rule"><div class="thanks">Thank you for your purchase!</div><p class="center muted">Powered by BridanX Business Manager</p></main></body></html>');
+ w.document.close();setTimeout(()=>{w.focus();w.print()},350);
 }
 const empty='<tr><td colspan="5"><div class="empty">No records yet. Add your first record to see it here.</div></td></tr>';
 function render(){
@@ -2059,7 +2063,7 @@ async function loadCloudData(){
   for(let i=0;i<results.length;i++)if(results[i].error)throw results[i].error;
   const [tr,sa,pr,cu]=results.map(x=>x.data||[]);
   const remote={transactions:tr.map(x=>({id:x.id,description:x.description,category:x.category,type:x.type,amount:String(x.amount),date:x.transaction_date})),
-   sales:sa.map(x=>({id:x.id,item:x.item,customer:x.customer||'',amount:String(x.amount),quantity:x.quantity==null?'':String(x.quantity),unit_cost_at_sale:x.unit_cost_at_sale==null?null:Number(x.unit_cost_at_sale),payment:x.payment_method,date:x.sale_date})),
+   sales:sa.map(x=>({id:x.id,item:x.item,customer:x.customer||'',amount:String(x.amount),quantity:x.quantity==null?'':String(x.quantity),unit_price:x.unit_price==null?null:Number(x.unit_price),unit_cost_at_sale:x.unit_cost_at_sale==null?null:Number(x.unit_cost_at_sale),payment:x.payment_method,date:x.sale_date,receipt_group_id:x.receipt_group_id||null,receipt_no:x.receipt_no||null,line_no:x.line_no==null?null:Number(x.line_no),receipt_total:x.receipt_total==null?null:Number(x.receipt_total),amount_received:x.amount_received==null?null:Number(x.amount_received),change_due:x.change_due==null?null:Number(x.change_due)})),
    products:pr.map(x=>({id:x.id,name:x.name,sku:x.sku||'',qty:String(x.quantity),price:String(x.unit_price),cost:String(x.unit_cost||0),product_category:x.product_category||'',brand:x.brand||'',variant:x.variant||'',unit:x.unit||'Piece',batch_number:x.batch_number||'',expiry_date:x.expiry_date||'',supplier_name:x.supplier_name||'',reorder_level:Number(x.reorder_level??5),target_stock_level:Number(x.target_stock_level??10)})),
    customers:cu.map(x=>({id:x.id,name:x.name,phone:x.phone||'',email:x.email||'',date:x.created_at?.slice(0,10)||new Date().toISOString().slice(0,10)})),debts:(results[4].data||[]).map(x=>({id:x.id,customer_name:x.customer_name,phone:x.phone||'',description:x.description,total_amount:String(x.total_amount),amount_paid:String(x.amount_paid),due_date:x.due_date||''}))};
   const saved=JSON.parse(localStorage.getItem(KEY)||'{}');
@@ -2134,7 +2138,7 @@ function dbRows(table,items){
   if(!x.id)x.id=uid();
   const base={id:x.id,user_id:currentUser.id};
   if(table==='transactions')return {...base,description:x.description,category:x.category||'Other',type:x.type,amount:Number(x.amount),transaction_date:x.date};
-  if(table==='sales')return {...base,item:x.item,customer:x.customer||null,amount:Number(x.amount),quantity:x.quantity==null?null:Number(x.quantity),unit_cost_at_sale:x.unit_cost_at_sale==null?null:Number(x.unit_cost_at_sale),payment_method:x.payment||'Other',sale_date:x.date};
+  if(table==='sales')return {...base,item:x.item,customer:x.customer||null,amount:Number(x.amount),quantity:x.quantity==null?null:Number(x.quantity),unit_price:x.unit_price==null?null:Number(x.unit_price),unit_cost_at_sale:x.unit_cost_at_sale==null?null:Number(x.unit_cost_at_sale),payment_method:x.payment||'Other',sale_date:x.date,receipt_group_id:x.receipt_group_id||null,receipt_no:x.receipt_no||null,line_no:x.line_no==null?null:Number(x.line_no),receipt_total:x.receipt_total==null?null:Number(x.receipt_total),amount_received:x.amount_received==null?null:Number(x.amount_received),change_due:x.change_due==null?null:Number(x.change_due)};
   if(table==='inventory')return {...base,name:x.name,sku:x.sku||null,quantity:Number(x.qty||0),unit_price:Number(x.price||0),unit_cost:Number(x.cost||0),product_category:x.product_category||null,brand:x.brand||null,variant:x.variant||null,unit:x.unit||null,batch_number:x.batch_number||null,expiry_date:x.expiry_date||null,supplier_name:x.supplier_name||null,reorder_level:Number(x.reorder_level??5),target_stock_level:Number(x.target_stock_level??10)};
   if(table==='debts')return {...base,customer_name:x.customer_name,phone:x.phone||null,description:x.description,total_amount:Number(x.total_amount),amount_paid:Number(x.amount_paid||0),due_date:x.due_date||null};
   return {...base,name:x.name,phone:x.phone||null,email:x.email||null,created_at:x.date?new Date(x.date+'T00:00:00').toISOString():undefined};
