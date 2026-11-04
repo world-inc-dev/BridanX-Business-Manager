@@ -522,6 +522,7 @@ body{background:radial-gradient(ellipse at 70% -18%,rgba(44,103,190,.25),transpa
     <strong>Ask about your business</strong>
     <p style="margin:4px 0 10px;color:var(--muted);font-size:12px">Ask a question about figures already saved in this workspace.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="bxQuestion" type="text" placeholder="e.g. How much do customers owe me?" style="flex:1;min-width:210px;background:#081b27;border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--text)"><button class="btn primary" id="bxAskQuestion" type="button">Ask question</button></div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:9px" aria-label="Example business questions"><button class="btn" type="button" data-bx-question="How much do customers owe me?">Customer debts</button><button class="btn" type="button" data-bx-question="What is my total income?">Total income</button><button class="btn" type="button" data-bx-question="What are my total expenses?">Total expenses</button><button class="btn" type="button" data-bx-question="What is my net profit?">Net position</button><button class="btn" type="button" data-bx-question="Which product sells the most?">Top-selling item</button><button class="btn" type="button" data-bx-question="Which items should I restock?">Low stock</button></div>
     <div id="bxAnswer" aria-live="polite" style="display:none;margin-top:12px;padding:13px;border:1px solid var(--line);border-radius:11px;background:#0b2230"></div>
    </div>
   </section>
@@ -1263,6 +1264,7 @@ function bxAnswerBusinessQuestion(){
  out.textContent=answer;out.style.display='block';
 }
 document.getElementById('bxAskQuestion').onclick=bxAnswerBusinessQuestion;
+document.querySelectorAll('[data-bx-question]').forEach(button=>button.addEventListener('click',()=>{const input=document.getElementById('bxQuestion');input.value=button.dataset.bxQuestion;bxAnswerBusinessQuestion();}));
 document.getElementById('bxQuestion').addEventListener('keydown',e=>{if(e.key==='Enter')bxAnswerBusinessQuestion();});
 
 async function bxAskAI(instruction){
