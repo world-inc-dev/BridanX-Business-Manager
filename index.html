@@ -1071,8 +1071,8 @@ function setAuthMode(mode){
 }
 document.getElementById('bxHeroSignIn').onclick=()=>bxShowAuth('login');
 document.getElementById('bxBackToLanding').onclick=bxShowLanding;
-function bxShowAuth(mode){document.querySelector('.welcome-intro').hidden=true;document.querySelector('.welcome-auth').hidden=false;document.querySelector('.welcome-layout').classList.add('auth-mode');setAuthMode(mode);document.getElementById('authEmail').focus();window.scrollTo({top:0,behavior:'smooth'});}
-function bxShowLanding(){document.querySelector('.welcome-auth').hidden=true;document.querySelector('.welcome-intro').hidden=false;document.querySelector('.welcome-layout').classList.remove('auth-mode');window.scrollTo({top:0,behavior:'smooth'});}
+function bxShowAuth(mode){const layout=document.querySelector('.welcome-layout');Array.from(layout.children).forEach(el=>{el.hidden=!el.classList.contains('welcome-auth');});document.querySelector('.welcome-auth').hidden=false;layout.classList.add('auth-mode');setAuthMode(mode);document.getElementById('authEmail').focus();window.scrollTo({top:0,behavior:'smooth'});}
+function bxShowLanding(){const layout=document.querySelector('.welcome-layout');Array.from(layout.children).forEach(el=>{el.hidden=false;});document.querySelector('.welcome-auth').hidden=true;layout.classList.remove('auth-mode');window.scrollTo({top:0,behavior:'smooth'});}
 document.getElementById('welcomeGetStarted').onclick=()=>bxShowAuth('signup');
 document.getElementById('bxNavStart').onclick=()=>bxShowAuth('signup');
 document.getElementById('bxSupportStart').onclick=()=>bxShowAuth('signup');
