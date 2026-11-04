@@ -706,18 +706,21 @@ document.getElementById('authForm').addEventListener('submit',async e=>{
  e.preventDefault();authMsg.textContent='Please wait…';
  const email=document.getElementById('authEmail').value.trim();
  const password=document.getElementById('authPassword').value;
- let result;
- if(authMode==='signup'){
+ let result;const creatingAccount=authMode==='signup';
+ if(creatingAccount){
   result=await sb.auth.signUp({email,password,options:{data:{business_name:document.getElementById('authBusiness').value.trim()||'My Business'}}});
-  if(!result.error&&!result.data.session){authMsg.textContent='Account created. Check your email to confirm, then sign in.';return;}
+  if(!result.error)localStorage.setItem('bx_open_plans_after_signup','yes');
+  if(!result.error&&!result.data.session){authMsg.textContent='Account created. Check your email to confirm. After signing in, your subscription plans will open automatically.';return;}
  }else result=await sb.auth.signInWithPassword({email,password});
  if(result.error){authMsg.textContent=result.error.message;return;}
- await activateUser(result.data.user);
+ const openPlans=localStorage.getItem('bx_open_plans_after_signup')==='yes';
+ await activateUser(result.data.user,openPlans);
+ if(openPlans)localStorage.removeItem('bx_open_plans_after_signup');
 });
 document.getElementById('signOutBtn').onclick=async()=>{await sb.auth.signOut();currentUser=null;isPlatformOwner=false;cloudSyncEnabled=true;data=emptyBusinessData();render();document.getElementById('appShell').style.display='none';document.getElementById('authGate').style.display='grid';};
 function setBusinessHeader(name){const el=document.getElementById('signedInBusinessName');if(el){const value=String(name||'My Business').trim()||'My Business';el.textContent=value;el.title=value;}}
 function uid(){return crypto.randomUUID()}
-async function activateUser(user){
+async function activateUser(user,openPlansAfterLogin=false){
  if(activationPromise){await activationPromise;return;}
  activationPromise=(async()=>{
   cloudSyncEnabled=true;
@@ -732,6 +735,7 @@ async function activateUser(user){
   await loadOperations();
   await loadMySubscription();
   await mountPlatformAdmin();
+  if(openPlansAfterLogin){const plansButton=document.querySelector('#nav [data-view="plans"]');if(plansButton)plansButton.click();}
  })();
  try{await activationPromise;}finally{activationPromise=null;}
 }
