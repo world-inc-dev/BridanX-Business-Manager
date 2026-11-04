@@ -484,6 +484,9 @@ function bxShowPreview(a){
  if(a.type==='sale'){
   lines=['Record sale: '+a.qty+' × '+a.item,'Sale total: '+bxMoney(a.total),'Payment received: '+bxMoney(a.paid),'Outstanding customer balance: '+bxMoney(a.total-a.paid),'Customer: '+(a.customer||'Not specified'),a.productId?'Reduce inventory by '+a.qty+' unit(s)':'No matching inventory item found; stock will not change'];
  }else if(a.type==='expense')lines=['Record expense: '+a.description,'Category: '+a.category,'Amount: '+bxMoney(a.amount)];
+ else if(a.type==='customer_payment')lines=['Record customer payment: '+a.customer,'Debt: '+a.description,'Payment received: '+bxMoney(a.amount),'Remaining balance after payment: '+bxMoney(a.balance-a.amount)];
+ else if(a.type==='stock_out')lines=['Reduce stock: '+a.item,'Quantity issued: '+a.qty,'Current available quantity: '+a.available];
+ else if(a.type==='supplier_purchase')lines=['Record supplier purchase: '+a.item,'Quantity received: '+a.qty,'Purchase expense: '+bxMoney(a.amount),'Supplier: '+(a.supplier||'Not specified')];
  else lines=['Update stock: '+a.item,'Quantity received: '+a.qty,a.productId?'Add to existing inventory':'Create a new inventory item (unit price will be 0 until edited)'];
  el.innerHTML='<strong>Review these changes</strong><ul style="margin:8px 0 14px;padding-left:20px;color:#d7e6e9">'+lines.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul><button class="btn primary" id="bxConfirm" type="button">Confirm and save</button> <button class="btn" id="bxCancel" type="button">Cancel</button>';
  $('bxConfirm').onclick=bxCommitAction;$('bxCancel').onclick=()=>{bxPendingAction=null;el.style.display='none';$('bxAssistantStatus').textContent='Cancelled. No records were changed.';};
@@ -499,6 +502,15 @@ function bxCommitAction(){
   if(a.productId){const p=data.products.find(x=>String(x.id)===String(a.productId));if(p)p.qty=String(Number(p.qty)-a.qty);}
  }else if(a.type==='expense'){
   data.transactions.push({description:a.description,category:a.category,type:'Expense',amount:String(a.amount),date});
+ }else if(a.type==='customer_payment'){
+  const debt=data.debts.find(x=>String(x.id)===String(a.debtId));if(!debt)return;
+  debt.amount_paid=String(Number(debt.amount_paid||0)+a.amount);
+  data.transactions.push({description:'Customer payment: '+a.customer+' · '+a.description,category:'Sales',type:'Income',amount:String(a.amount),date});
+ }else if(a.type==='stock_out'){
+  const p=data.products.find(x=>String(x.id)===String(a.productId));if(!p)return;p.qty=String(Number(p.qty)-a.qty);
+ }else if(a.type==='supplier_purchase'){
+  data.transactions.push({description:'Stock purchase: '+a.item+(a.supplier?' · '+a.supplier:''),category:'Stock / supplies',type:'Expense',amount:String(a.amount),date});
+  const p=a.productId&&data.products.find(x=>String(x.id)===String(a.productId));if(p)p.qty=String(Number(p.qty)+a.qty);else data.products.push({name:a.item,sku:'',qty:String(a.qty),price:'0'});
  }else if(a.type==='stock'){
   const p=a.productId&&data.products.find(x=>String(x.id)===String(a.productId));
   if(p)p.qty=String(Number(p.qty)+a.qty);else data.products.push({name:a.item,sku:'',qty:String(a.qty),price:'0'});
@@ -539,6 +551,19 @@ function bxConvertAIResult(result){
   if(!qty||!item)return {error:'The stock item and quantity need clarification.'};
   const product=data.products.find(p=>String(p.name||'').toLowerCase()===item.toLowerCase());
   return {type:'stock',qty,item,productId:product?.id||null};
+ }
+ if(x.type==='stock_out'){
+  const qty=Number(x.quantity||0),item=String(x.item||'').trim(),product=data.products.find(p=>String(p.name||'').toLowerCase()===item.toLowerCase());
+  if(!qty||!item||!product)return {error:'I could not match that item to inventory. Check the product name and quantity.'};const available=Number(product.qty||0);if(qty>available)return {error:'Only '+available+' '+item+' available. No records were changed.'};return {type:'stock_out',qty,item,available,productId:product.id};
+ }
+ if(x.type==='customer_payment'){
+  const amount=Number(x.amount_paid||x.amount||0),customer=String(x.customer||'').trim();if(!amount||!customer)return {error:'Specify the customer and payment amount.'};
+  const debt=data.debts.find(d=>String(d.customer_name||'').toLowerCase()===customer.toLowerCase()&&Number(d.total_amount)>Number(d.amount_paid||0));if(!debt)return {error:'No outstanding customer debt was found for '+customer+'.'};
+  const balance=Number(debt.total_amount)-Number(debt.amount_paid||0);if(amount>balance)return {error:'The payment exceeds the outstanding balance of '+bxMoney(balance)+'.'};return {type:'customer_payment',customer,amount,balance,debtId:debt.id,description:debt.description};
+ }
+ if(x.type==='supplier_purchase'){
+  const qty=Number(x.quantity||0),item=String(x.item||'').trim(),amount=Number(x.amount||x.total_amount||qty*Number(x.unit_price||0)),supplier=String(x.supplier||'').trim();if(!qty||!item||!amount||amount<=0)return {error:'Specify the purchased item, quantity and total purchase amount.'};
+  const product=data.products.find(p=>String(p.name||'').toLowerCase()===item.toLowerCase());return {type:'supplier_purchase',qty,item,amount,supplier,productId:product?.id||null};
  }
  return {error:'I understood this as "'+String(result.summary||x.type)+'", but this action is not enabled for automatic saving yet. No records were changed.'};
 }
