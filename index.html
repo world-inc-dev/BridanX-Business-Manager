@@ -402,7 +402,8 @@ document.addEventListener('click',async e=>{
  if(pay)payPayroll(pay.dataset.payrollPay);
  if(slip)printPayslip(slip.dataset.payslip);
 });
-\nconst authMsg=document.getElementById('authMessage');
+
+const authMsg=document.getElementById('authMessage');
 function setAuthMode(mode){
  authMode=mode;
  document.getElementById('authTitle').textContent=mode==='login'?'Welcome back':'Create your business account';
