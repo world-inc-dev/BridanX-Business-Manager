@@ -52,7 +52,7 @@
 <script>
 const KEY='bridanx-business-manager-v1';
 let data=JSON.parse(localStorage.getItem(KEY)||'{"transactions":[],"sales":[],"products":[],"customers":[]}');
-const $=id=>document.getElementById(id), money=n=>'UGX '+Number(n||0).toLocaleString('en-UG');
+const $=id=>document.getElementById(id), money=n=>'₦'+Number(n||0).toLocaleString('en-NG',{maximumFractionDigits:2});
 const save=()=>{localStorage.setItem(KEY,JSON.stringify(data));render()};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const empty='<tr><td colspan="5"><div class="empty">No records yet. Add your first record to see it here.</div></td></tr>';
@@ -78,10 +78,10 @@ function select(label,name,options){return '<div class="field"><label>'+label+'<
 function openModal(title,fields,onSave){$('modalTitle').textContent=title;$('recordForm').innerHTML=fields+'<div class="form-actions"><button type="button" class="btn" id="cancelForm">Cancel</button><button class="btn primary">Save record</button></div>';$('modalBackdrop').classList.add('open');$('cancelForm').onclick=closeModal;$('recordForm').onsubmit=e=>{e.preventDefault();const obj=Object.fromEntries(new FormData(e.target));onSave(obj);closeModal();save()}}
 function closeModal(){$('modalBackdrop').classList.remove('open')}
 $('closeModal').onclick=closeModal;$('modalBackdrop').onclick=e=>{if(e.target===$('modalBackdrop'))closeModal()};
-function transaction(){openModal('Add transaction',field('Description','description')+select('Type','type',['Income','Expense'])+select('Category','category',['Sales','Services','Stock / supplies','Transport','Rent','Utilities','Marketing','Salaries','Other'])+field('Amount (UGX)','amount','number',true,'min="1" step="1"')+field('Date','date','date',true,'value="'+today()+'"'),o=>data.transactions.push(o))}
+function transaction(){openModal('Add transaction',field('Description','description')+select('Type','type',['Income','Expense'])+select('Category','category',['Sales','Services','Stock / supplies','Transport','Rent','Utilities','Marketing','Salaries','Other'])+field('Amount (NGN)','amount','number',true,'min="1" step="1"')+field('Date','date','date',true,'value="'+today()+'"'),o=>data.transactions.push(o))}
 $('addTransaction').onclick=transaction;$('quickAdd').onclick=transaction;
-$('addSale').onclick=()=>openModal('Record a sale',field('Item / service','item')+field('Customer name','customer','text',false)+field('Amount (UGX)','amount','number',true,'min="1"')+select('Payment method','payment',['Cash','Mobile Money','Bank transfer','Card','Other'])+field('Date','date','date',true,'value="'+today()+'"'),o=>{data.sales.push(o);data.transactions.push({description:'Sale: '+o.item,category:'Sales',type:'Income',amount:o.amount,date:o.date})});
-$('addProduct').onclick=()=>openModal('Add product',field('Product name','name')+field('SKU / product code','sku','text',false)+field('Quantity in stock','qty','number',true,'min="0"')+field('Unit price (UGX)','price','number',true,'min="0"'),o=>data.products.push(o));
+$('addSale').onclick=()=>openModal('Record a sale',field('Item / service','item')+field('Customer name','customer','text',false)+field('Amount (NGN)','amount','number',true,'min="1"')+select('Payment method','payment',['Cash','Mobile Money','Bank transfer','Card','Other'])+field('Date','date','date',true,'value="'+today()+'"'),o=>{data.sales.push(o);data.transactions.push({description:'Sale: '+o.item,category:'Sales',type:'Income',amount:o.amount,date:o.date})});
+$('addProduct').onclick=()=>openModal('Add product',field('Product name','name')+field('SKU / product code','sku','text',false)+field('Quantity in stock','qty','number',true,'min="0"')+field('Unit price (NGN)','price','number',true,'min="0"'),o=>data.products.push(o));
 $('addCustomer').onclick=()=>openModal('Add customer',field('Customer name','name')+field('Phone number','phone','tel',false)+field('Email address','email','email',false)+field('Date added','date','date',true,'value="'+today()+'"'),o=>data.customers.push(o));
 $('transactionSearch').oninput=render;
 $('exportCsv').onclick=()=>{const rows=[['Description','Category','Type','Date','Amount'],...data.transactions.map(x=>[x.description,x.category,x.type,x.date,x.amount])];const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='bridanx-transactions.csv';a.click();URL.revokeObjectURL(a.href)};
