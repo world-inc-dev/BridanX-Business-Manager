@@ -511,7 +511,7 @@ body{background:radial-gradient(ellipse at 70% -18%,rgba(44,103,190,.25),transpa
   <section class="card overview-assistant" id="bxAssistant">
    <div class="section-head"><div><div class="eyebrow">BRIDANX SMART ASSISTANT</div><h2>Record business activity in everyday language</h2><p>Review the assistant's preview before anything is saved.</p></div><span class="stat-icon">✦</span></div>
    <div class="field"><label for="bxCommand">Your instruction</label><textarea id="bxCommand" rows="3" placeholder="Example: I sold 5 bags of rice at 30,000 each to John. He paid 100,000 cash." style="width:100%;resize:vertical;background:#081b27;border:1px solid var(--line);border-radius:11px;padding:12px;color:var(--text)"></textarea></div>
-   <div class="overview-assistant-actions"><button class="btn primary" id="bxInterpret" type="button">Understand instruction</button><span id="bxAssistantStatus" aria-live="polite">It will prepare a preview before saving anything.</span></div>
+   <div class="overview-assistant-actions"><button class="btn primary" id="bxInterpret" type="button">Understand instruction</button><button class="btn" id="bxVoiceCommand" type="button">🎙 Speak instruction</button><span id="bxAssistantStatus" aria-live="polite">It will prepare a preview before saving anything.</span></div>
    <div id="bxAssistantPreview" style="display:none;margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#081b27"></div>
    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)">
     <div style="flex:1;min-width:190px"><strong>Business health check</strong><p style="margin:4px 0 0;color:var(--muted);font-size:12px">Get a quick summary from your saved records. This analysis does not change anything.</p></div>
@@ -521,7 +521,7 @@ body{background:radial-gradient(ellipse at 70% -18%,rgba(44,103,190,.25),transpa
    <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line)">
     <strong>Ask about your business</strong>
     <p style="margin:4px 0 10px;color:var(--muted);font-size:12px">Ask a question about figures already saved in this workspace.</p>
-    <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="bxQuestion" type="text" placeholder="e.g. How much do customers owe me?" style="flex:1;min-width:210px;background:#081b27;border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--text)"><button class="btn primary" id="bxAskQuestion" type="button">Ask question</button></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="bxQuestion" type="text" placeholder="Ask or speak to your assistant…" style="flex:1;min-width:210px;background:#081b27;border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--text)"><button class="btn primary" id="bxAskQuestion" type="button">Ask question</button><button class="btn" id="bxVoiceChat" type="button">🎙 Talk</button></div><p id="bxVoiceStatus" aria-live="polite" style="margin:7px 0 0;color:var(--muted);font-size:11px">Use your microphone to ask a question and hear the answer. Microphone permission is required.</p>
     <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:9px" aria-label="Example business questions"><button class="btn" type="button" data-bx-question="How much do customers owe me?">Customer debts</button><button class="btn" type="button" data-bx-question="What is my total income?">Total income</button><button class="btn" type="button" data-bx-question="What are my total expenses?">Total expenses</button><button class="btn" type="button" data-bx-question="What is my net profit?">Net position</button><button class="btn" type="button" data-bx-question="Which product sells the most?">Top-selling item</button><button class="btn" type="button" data-bx-question="Which items should I restock?">Low stock</button></div>
     <div id="bxAnswer" aria-live="polite" style="display:none;margin-top:12px;padding:13px;border:1px solid var(--line);border-radius:11px;background:#0b2230"></div>
    </div>
@@ -1266,6 +1266,42 @@ function bxAnswerBusinessQuestion(){
 document.getElementById('bxAskQuestion').onclick=bxAnswerBusinessQuestion;
 document.querySelectorAll('[data-bx-question]').forEach(button=>button.addEventListener('click',()=>{const input=document.getElementById('bxQuestion');input.value=button.dataset.bxQuestion;bxAnswerBusinessQuestion();}));
 document.getElementById('bxQuestion').addEventListener('keydown',e=>{if(e.key==='Enter')bxAnswerBusinessQuestion();});
+let bxRecognition=null,bxVoiceMode='';
+function bxSetVoiceStatus(message){const el=document.getElementById('bxVoiceStatus');if(el)el.textContent=message;}
+function bxSpeak(text){
+ if(!('speechSynthesis' in window))return;
+ window.speechSynthesis.cancel();
+ const utterance=new SpeechSynthesisUtterance(String(text||''));utterance.lang='en-US';utterance.rate=1;window.speechSynthesis.speak(utterance);
+}
+function bxStartVoice(mode){
+ const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SpeechRecognition){bxSetVoiceStatus('Voice input is not supported by this browser. Try an up-to-date Chrome browser.');return;}
+ if(!window.isSecureContext){bxSetVoiceStatus('Voice input requires a secure HTTPS connection.');return;}
+ if(bxRecognition){try{bxRecognition.stop();}catch(_){}}
+ bxVoiceMode=mode;bxRecognition=new SpeechRecognition();bxRecognition.lang='en-US';bxRecognition.continuous=false;bxRecognition.interimResults=false;bxRecognition.maxAlternatives=1;
+ const button=document.getElementById(mode==='question'?'bxVoiceChat':'bxVoiceCommand');
+ button.textContent='Listening…';button.disabled=true;
+ bxSetVoiceStatus(mode==='question'?'Listening. Ask your business question now…':'Listening. Say the business activity you want to record…');
+ bxRecognition.onresult=event=>{
+  const transcript=String(event.results?.[0]?.[0]?.transcript||'').trim();
+  if(!transcript){bxSetVoiceStatus('I did not catch that. Please try again.');return;}
+  if(mode==='question'){
+   document.getElementById('bxQuestion').value=transcript;bxAnswerBusinessQuestion();
+   const answer=document.getElementById('bxAnswer').textContent;bxSetVoiceStatus('You said: '+transcript+' — Speaking the answer.');bxSpeak(answer);
+  }else{
+   document.getElementById('bxCommand').value=transcript;
+   document.getElementById('bxAssistantStatus').textContent='Voice instruction captured. Preparing a review preview…';
+   document.getElementById('bxInterpret').click();
+   bxSetVoiceStatus('Instruction captured. Review the assistant preview before saving.');
+  }
+ };
+ bxRecognition.onerror=event=>{bxSetVoiceStatus(event.error==='not-allowed'?'Microphone access was blocked. Allow microphone permission in your browser settings.':'Voice input stopped: '+event.error+'. Please try again.');};
+ bxRecognition.onend=()=>{button.disabled=false;button.textContent=mode==='question'?'🎙 Talk':'🎙 Speak instruction';};
+ try{bxRecognition.start();}catch(error){button.disabled=false;button.textContent=mode==='question'?'🎙 Talk':'🎙 Speak instruction';bxSetVoiceStatus('Could not start the microphone. Please try again.');}
+}
+document.getElementById('bxVoiceChat').addEventListener('click',()=>bxStartVoice('question'));
+document.getElementById('bxVoiceCommand').addEventListener('click',()=>bxStartVoice('command'));
+
 
 async function bxAskAI(instruction){
  const {data:sessionData}=await sb.auth.getSession();
