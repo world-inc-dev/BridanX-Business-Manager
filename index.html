@@ -588,7 +588,7 @@ body{background:radial-gradient(ellipse at 70% -18%,rgba(44,103,190,.25),transpa
   <article class="card"><div class="stat-top">Open</div><div class="stat-value" id="workOpenCount">0</div></article>
   <article class="card"><div class="stat-top">In progress</div><div class="stat-value" id="workProgressCount">0</div></article>
   <article class="card"><div class="stat-top">Completed</div><div class="stat-value" id="workCompletedCount">0</div></article>
-  <article class="card"><div class="stat-top">Recorded value</div><div class="stat-value" id="workValueTotal">—</div></article>
+  <article class="card"><div class="stat-top" id="workValueLabel">Recorded value</div><div class="stat-value" id="workValueTotal">—</div></article>
  </div>
  <div class="card table-card"><div class="table-wrap"><table style="min-width:760px"><thead><tr><th>Record</th><th>Title / details</th><th>Person / account</th><th>Date</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody id="workItemsRows"></tbody></table></div></div>
  <p class="statement-note">Operations records are separate from sales and expenses. Enter money here for tracking only; record actual payments in Sales or Transactions so financial reports remain accurate.</p>
@@ -918,22 +918,61 @@ const workTypeConfig={
  hospitality:{heading:'Guest & room operations',intro:'Track guest bookings, room turns and service requests.',type:'Guest booking / request',title:'Room / guest request',party:'Guest name',reference:'Room / booking reference'},
  construction:{heading:'Projects & site tasks',intro:'Track project milestones, site activities and client follow-ups.',type:'Project / site task',title:'Project or work item',party:'Client / site contact',reference:'Project / site reference'}
 };
+function workDetailSummary(x){
+ const d=x.details||{};
+ if(x.business_type==='school')return 'Class: '+(d.class_name||'—')+' · Term: '+(d.academic_term||'—')+' · Paid: '+money(d.fees_paid||0)+' · Balance: '+money(Math.max(0,Number(x.amount||0)-Number(d.fees_paid||0)));
+ if(x.business_type==='salon')return 'Time: '+(d.appointment_time||'—')+' · Stylist: '+(d.stylist||'—')+' · Duration: '+(d.duration_minutes||'—')+' min';
+ if(x.business_type==='transport')return (d.origin||'—')+' → '+(d.destination||'—')+' · Driver: '+(d.driver||'—')+' · Vehicle: '+(d.vehicle||'—');
+ return d.notes||'';
+}
 function renderWorkItems(){
- const cfg=workTypeConfig[businessType]||workTypeConfig.general,rows=data.workItems||[];
+ const cfg=workTypeConfig[businessType]||workTypeConfig.general,rows=(data.workItems||[]).filter(x=>!x.business_type||x.business_type===businessType);
  $('operationsHeading').textContent=cfg.heading;$('operationsIntro').textContent=cfg.intro;
  $('workOpenCount').textContent=rows.filter(x=>x.status==='open').length;
  $('workProgressCount').textContent=rows.filter(x=>x.status==='in_progress').length;
  $('workCompletedCount').textContent=rows.filter(x=>x.status==='completed').length;
- $('workValueTotal').textContent=money(rows.reduce((n,x)=>n+Number(x.amount||0),0));
- $('workItemsRows').innerHTML=rows.map(x=>'<tr><td>'+esc(x.record_type)+'</td><td><b>'+esc(x.title)+'</b>'+(x.details?.notes?'<br><small>'+esc(x.details.notes)+'</small>':'')+'</td><td>'+esc(x.party_name||'—')+(x.reference?'<br><small>'+esc(x.reference)+'</small>':'')+'</td><td>'+esc(x.scheduled_date||'—')+'</td><td>'+money(x.amount||0)+'</td><td><span class="badge">'+esc(String(x.status||'open').replace('_',' '))+'</span></td><td><button class="btn" data-work-edit="'+esc(x.id)+'">Edit</button> <button class="btn" data-work-next="'+esc(x.id)+'">Next status</button> <button class="btn danger" data-work-delete="'+esc(x.id)+'">Delete</button></td></tr>').join('')||'<tr><td colspan="7"><div class="empty">No operations records yet. Add your first record.</div></td></tr>';
+ const valueLabel=document.getElementById('workValueLabel');
+ if(businessType==='school'){
+  if(valueLabel)valueLabel.textContent='Outstanding fees';
+  $('workValueTotal').textContent=money(rows.reduce((n,x)=>n+Math.max(0,Number(x.amount||0)-Number(x.details?.fees_paid||0)),0));
+ }else if(businessType==='salon'){
+  if(valueLabel)valueLabel.textContent='Today appointments';
+  $('workValueTotal').textContent=String(rows.filter(x=>x.record_type==='Appointment'&&x.scheduled_date===today()&&x.status!=='cancelled').length);
+ }else if(businessType==='transport'){
+  if(valueLabel)valueLabel.textContent='Upcoming trips';
+  $('workValueTotal').textContent=String(rows.filter(x=>x.record_type==='Trip / delivery'&&x.scheduled_date>=today()&&x.status!=='cancelled'&&x.status!=='completed').length);
+ }else{
+  if(valueLabel)valueLabel.textContent='Recorded value';
+  $('workValueTotal').textContent=money(rows.reduce((n,x)=>n+Number(x.amount||0),0));
+ }
+ $('workItemsRows').innerHTML=rows.map(x=>'<tr><td>'+esc(x.record_type)+'</td><td><b>'+esc(x.title)+'</b>'+(workDetailSummary(x)?'<br><small>'+esc(workDetailSummary(x))+'</small>':'')+'</td><td>'+esc(x.party_name||'—')+(x.reference?'<br><small>'+esc(x.reference)+'</small>':'')+'</td><td>'+esc(x.scheduled_date||'—')+'</td><td>'+money(x.amount||0)+'</td><td><span class="badge">'+esc(String(x.status||'open').replace('_',' '))+'</span></td><td><button class="btn" data-work-edit="'+esc(x.id)+'">Edit</button> <button class="btn" data-work-next="'+esc(x.id)+'">Next status</button> <button class="btn danger" data-work-delete="'+esc(x.id)+'">Delete</button></td></tr>').join('')||'<tr><td colspan="7"><div class="empty">No records yet. Add your first '+esc(cfg.type.toLowerCase())+'.</div></td></tr>';
 }
 function openWorkItem(existing={}){
- const cfg=workTypeConfig[businessType]||workTypeConfig.general;
- const html=field('Record type','record_type')+field(cfg.title,'title')+field(cfg.party,'party_name','text',false)+field(cfg.reference,'reference','text',false)+field('Date','scheduled_date','date',false,'value="'+today()+'"')+field('Amount to track ('+currencyCode+')','amount','number',false,'min="0" step="0.01" value="0"')+select('Status','status',['open','in_progress','completed','cancelled'])+field('Notes','notes','text',false);
- const initial=existing.id?{...existing,notes:existing.details?.notes||''}:{record_type:cfg.type,status:'open',amount:'0',scheduled_date:today()};
+ const cfg=workTypeConfig[businessType]||workTypeConfig.general,d=existing.details||{};
+ let special='',extraInitial={};
+ if(businessType==='school'){
+  special=field('Admission number','admission_number','text',false)+field('Class / year','class_name','text',true)+field('Academic term','academic_term','text',false)+field('Total fees ('+currencyCode+')','amount','number',false,'min="0" step="0.01" value="0"')+field('Fees paid ('+currencyCode+')','fees_paid','number',false,'min="0" step="0.01" value="0"');
+  extraInitial={admission_number:d.admission_number||'',class_name:d.class_name||'',academic_term:d.academic_term||'',fees_paid:d.fees_paid??'0'};
+ }else if(businessType==='salon'){
+  special=field('Appointment time','appointment_time','time',false)+field('Stylist / staff member','stylist','text',false)+field('Service duration (minutes)','duration_minutes','number',false,'min="5" step="5"');
+  extraInitial={appointment_time:d.appointment_time||'',stylist:d.stylist||'',duration_minutes:d.duration_minutes||'30'};
+ }else if(businessType==='transport'){
+  special=field('Pickup / origin','origin','text',true)+field('Destination','destination','text',true)+field('Driver','driver','text',false)+field('Vehicle / registration','vehicle','text',false)+field('Distance (km)','distance_km','number',false,'min="0" step="0.1"');
+  extraInitial={origin:d.origin||'',destination:d.destination||'',driver:d.driver||'',vehicle:d.vehicle||'',distance_km:d.distance_km||''};
+ }
+ const amountLabel=businessType==='school'?'Total fees':businessType==='transport'?'Fare / delivery charge':businessType==='salon'?'Expected service charge':'Amount to track';
+ const html=(businessType==='school'?'':field('Record type','record_type'))+field(cfg.title,'title')+field(cfg.party,'party_name','text',false)+field(cfg.reference,'reference','text',false)+field('Date','scheduled_date','date',false,'value="'+today()+'"')+special+(businessType==='school'?'':field(amountLabel+' ('+currencyCode+')','amount','number',false,'min="0" step="0.01" value="0"'))+select('Status','status',['open','in_progress','completed','cancelled'])+field('Notes','notes','text',false);
+ const initial=existing.id?{...existing,...extraInitial,notes:d.notes||''}:{record_type:cfg.type,status:'open',amount:'0',scheduled_date:today(),...extraInitial};
  openModal(existing.id?'Edit operations record':'Add '+cfg.type.toLowerCase(),html,o=>{
-  const item={id:existing.id||uid(),business_type:businessType,record_type:o.record_type,title:o.title.trim(),party_name:o.party_name||'',reference:o.reference||'',scheduled_date:o.scheduled_date||'',amount:Number(o.amount||0),status:o.status,details:{notes:o.notes||''},created_at:existing.created_at||new Date().toISOString()};
-  if(!item.title){alert('Enter a title or description.');return;}
+  if(!o.title?.trim()){alert('Enter a title or description.');return;}
+  if(businessType==='school'&&!o.class_name?.trim()){alert('Enter the student class or year.');return;}
+  if(businessType==='transport'&&(!o.origin?.trim()||!o.destination?.trim())){alert('Enter both the pickup point and destination.');return;}
+  const details={notes:o.notes||''};
+  if(businessType==='school')Object.assign(details,{admission_number:o.admission_number||'',class_name:o.class_name||'',academic_term:o.academic_term||'',fees_paid:Number(o.fees_paid||0)});
+  if(businessType==='salon')Object.assign(details,{appointment_time:o.appointment_time||'',stylist:o.stylist||'',duration_minutes:Number(o.duration_minutes||0)});
+  if(businessType==='transport')Object.assign(details,{origin:o.origin||'',destination:o.destination||'',driver:o.driver||'',vehicle:o.vehicle||'',distance_km:Number(o.distance_km||0)});
+  const item={id:existing.id||uid(),business_type:businessType,record_type:businessType==='school'?'Student / fee record':businessType==='salon'?'Appointment':businessType==='transport'?'Trip / delivery':o.record_type,title:o.title.trim(),party_name:o.party_name||'',reference:o.reference||'',scheduled_date:o.scheduled_date||'',amount:Number(o.amount||0),status:o.status,details,created_at:existing.created_at||new Date().toISOString()};
+  if(businessType==='school'&&details.fees_paid>item.amount){alert('Fees paid cannot exceed total fees.');return;}
   const index=(data.workItems||[]).findIndex(x=>x.id===item.id);
   if(index>=0)data.workItems[index]=item;else data.workItems.unshift(item);
   renderWorkItems();
@@ -1753,7 +1792,7 @@ async function loadCloudData(){
   const workIds=new Set(cloudWork.map(x=>String(x.id)));
   const localWork=savedWork.filter(x=>!x.id||!workIds.has(String(x.id)));
   data.workItems=[...cloudWork,...localWork.map(x=>({...x,id:x.id||uid()}))];
-  if(localWork.length&&cloudSyncEnabled)await pushWorkItems(localWork);
+  if(localWork.length&&cloudSyncEnabled)await pushWorkItems(data.workItems.filter(x=>!cloudWork.some(c=>String(c.id)===String(x.id))));
   localStorage.setItem(KEY,JSON.stringify(data));render();
   const {data:profile,error:profileError}=await sb.from('business_profiles').select('*').eq('user_id',currentUser.id).maybeSingle();
   if(profileError)throw profileError;
