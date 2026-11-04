@@ -132,7 +132,7 @@ render();
 const SB_URL='https://yuzzpyellyqicyezjvka.supabase.co';
 const SB_KEY='sb_publishable_xg0I3fVNZCuBLIqnBw-0YA_6yL9QbGC';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-let authMode='login', currentUser=null, cloudBusy=false;
+let authMode='login', currentUser=null, cloudBusy=false, cloudSyncEnabled=true;
 const authMsg=document.getElementById('authMessage');
 function setAuthMode(mode){
  authMode=mode;
@@ -184,7 +184,7 @@ async function loadCloudData(){
   if(remoteEmpty&&localHas){
    const ok=confirm('We found records saved in this browser. Import them into your new account so you can keep them?');
    if(ok){data=local;await pushAllLocal();}
-   else data=remote;
+   else {data=local;cloudSyncEnabled=false;alert('Your existing records remain on this device. They were not imported into the cloud. You can import them later by signing in again.');}
   }else if(!remoteEmpty){
    // Merge unique local records not already present in the cloud; never discard browser data silently.
    data=remote;
@@ -199,7 +199,7 @@ async function loadCloudData(){
   const {data:profile,error:profileError}=await sb.from('business_profiles').select('*').eq('user_id',currentUser.id).maybeSingle();
   if(profileError)throw profileError;
   if(!profile){
-   const {error}=await sb.from('business_profiles').upsert({user_id:currentUser.id,business_name:user.user_metadata?.business_name||'My Business',country_code:'NG',currency_code:currencyCode});
+   const {error}=await sb.from('business_profiles').upsert({user_id:currentUser.id,business_name:currentUser.user_metadata?.business_name||'My Business',country_code:'NG',currency_code:currencyCode});
    if(error)throw error;
   }else if(profile.currency_code){currencyCode=profile.currency_code;localStorage.setItem(CURRENCY_KEY,currencyCode);currencySelect.value=currencyCode;render();}
  }catch(err){console.error(err);alert('Cloud sync could not finish: '+err.message+'. Your browser records are still kept on this device.');}
@@ -223,7 +223,7 @@ async function pushAllLocal(){
  for(const table of ['transactions','sales','inventory','customers'])await syncTable(table,data[table]||[]);
 }
 const originalSave=save;
-save=()=>{localStorage.setItem(KEY,JSON.stringify(data));render();if(currentUser){pushAllLocal().catch(e=>{console.error(e);alert('Saved on this device, but cloud sync failed: '+e.message);});}};
+save=()=>{localStorage.setItem(KEY,JSON.stringify(data));render();if(currentUser&&cloudSyncEnabled){pushAllLocal().catch(e=>{console.error(e);alert('Saved on this device, but cloud sync failed: '+e.message);});}};
 sb.auth.getSession().then(({data:{session}})=>{if(session)activateUser(session.user);});
 sb.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_IN'&&session&&!currentUser)activateUser(session.user);});
 </script>
