@@ -12,7 +12,30 @@
 </style>
 </head>
 <body>
-<div class="shell">
+
+<style>
+#authGate{position:fixed;inset:0;z-index:20;background:radial-gradient(ellipse at 70% 0,#123c48,#071521 55%);display:grid;place-items:center;padding:18px}
+.auth-card{width:min(100%,430px);background:#0d2230;border:1px solid #1c3b4b;border-radius:22px;padding:26px;box-shadow:0 25px 80px #0008}
+.auth-card h2{margin:0 0 6px;font-size:25px}.auth-card p{color:#91aab4;font-size:13px;margin:0 0 20px}
+.auth-card .field{margin-bottom:12px}.auth-tabs{display:flex;gap:8px;margin-bottom:18px}.auth-tabs button{flex:1}
+#authMessage{min-height:20px;color:#ffb8a8;font-size:12px;margin-top:10px}
+#accountBar{display:flex;align-items:center;gap:8px}.auth-email{font-size:11px;color:#91aab4;max-width:170px;overflow:hidden;text-overflow:ellipsis}
+</style>
+<div id="authGate">
+ <div class="auth-card">
+  <div class="brand" style="padding:0 0 20px"><div class="logo">BX</div><div><strong>BridanX</strong><small>BUSINESS MANAGER</small></div></div>
+  <h2 id="authTitle">Welcome back</h2><p>Sign in to securely access your business records from your devices.</p>
+  <div class="auth-tabs"><button class="btn primary" id="showLogin" type="button">Sign in</button><button class="btn" id="showSignup" type="button">Create account</button></div>
+  <form id="authForm">
+   <div class="field" id="businessField" style="display:none"><label>Business name</label><input id="authBusiness" autocomplete="organization"></div>
+   <div class="field"><label>Email address</label><input id="authEmail" type="email" required autocomplete="email"></div>
+   <div class="field"><label>Password</label><input id="authPassword" type="password" required minlength="6" autocomplete="current-password"></div>
+   <button class="btn primary" id="authSubmit" style="width:100%">Sign in</button>
+  </form>
+  <div id="authMessage"></div>
+ </div>
+</div>
+<div class="shell" id="appShell" style="display:none">
 <aside class="sidebar" id="sidebar">
  <div class="brand"><div class="logo">BX</div><div><strong>BridanX</strong><small>BUSINESS MANAGER</small></div></div>
  <div><div class="nav-label">WORKSPACE</div><nav class="nav" id="nav">
@@ -26,7 +49,7 @@
  <div class="side-bottom"><b>BridanX Digital Business Hub</b>One clear view of your business. Your records are saved in this browser on this device.</div>
 </aside>
 <main class="main">
- <header class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="btn mobile-menu" id="menuBtn">☰</button><div><div class="eyebrow">BUSINESS WORKSPACE</div><h1 id="pageTitle">Overview</h1></div></div><div class="top-actions"><select id="currencySelect" aria-label="Display currency" class="date-pill" style="max-width:170px;background:#0c202d;color:var(--text);border:1px solid var(--line)"></select><div class="date-pill" id="today"></div><div class="avatar">BX</div></div></header>
+ <header class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="btn mobile-menu" id="menuBtn">☰</button><div><div class="eyebrow">BUSINESS WORKSPACE</div><h1 id="pageTitle">Overview</h1></div></div><div class="top-actions"><div id="accountBar"><span class="auth-email" id="signedInEmail"></span><button class="btn" id="signOutBtn" type="button">Sign out</button></div><select id="currencySelect" aria-label="Display currency" class="date-pill" style="max-width:170px;background:#0c202d;color:var(--text);border:1px solid var(--line)"></select><div class="date-pill" id="today"></div><div class="avatar">BX</div></div></header>
  <section class="view active" id="overview">
   <div class="notice">Welcome to your business workspace. Add your first transaction, sale, product or customer to get started.</div>
   <div class="grid stats">
@@ -102,5 +125,104 @@ document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>document.querySe
 $('menuBtn').onclick=()=>$('sidebar').classList.toggle('open');
 $('today').textContent=new Date().toLocaleDateString('en-UG',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
 render();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SB_URL='https://yuzzpyellyqicyezjvka.supabase.co';
+const SB_KEY='sb_publishable_xg0I3fVNZCuBLIqnBw-0YA_6yL9QbGC';
+const sb=window.supabase.createClient(SB_URL,SB_KEY);
+let authMode='login', currentUser=null, cloudBusy=false;
+const authMsg=document.getElementById('authMessage');
+function setAuthMode(mode){
+ authMode=mode;
+ document.getElementById('authTitle').textContent=mode==='login'?'Welcome back':'Create your business account';
+ document.getElementById('businessField').style.display=mode==='signup'?'grid':'none';
+ document.getElementById('authPassword').autocomplete=mode==='signup'?'new-password':'current-password';
+ document.getElementById('authSubmit').textContent=mode==='signup'?'Create account':'Sign in';
+ document.getElementById('showLogin').classList.toggle('primary',mode==='login');
+ document.getElementById('showSignup').classList.toggle('primary',mode==='signup');
+ authMsg.textContent='';
+}
+document.getElementById('showLogin').onclick=()=>setAuthMode('login');
+document.getElementById('showSignup').onclick=()=>setAuthMode('signup');
+document.getElementById('authForm').addEventListener('submit',async e=>{
+ e.preventDefault();authMsg.textContent='Please wait…';
+ const email=document.getElementById('authEmail').value.trim();
+ const password=document.getElementById('authPassword').value;
+ let result;
+ if(authMode==='signup'){
+  result=await sb.auth.signUp({email,password,options:{data:{business_name:document.getElementById('authBusiness').value.trim()||'My Business'}}});
+  if(!result.error&&!result.data.session){authMsg.textContent='Account created. Check your email to confirm, then sign in.';return;}
+ }else result=await sb.auth.signInWithPassword({email,password});
+ if(result.error){authMsg.textContent=result.error.message;return;}
+ await activateUser(result.data.user);
+});
+document.getElementById('signOutBtn').onclick=async()=>{await sb.auth.signOut();currentUser=null;document.getElementById('appShell').style.display='none';document.getElementById('authGate').style.display='grid';};
+function uid(){return crypto.randomUUID()}
+async function activateUser(user){
+ currentUser=user;document.getElementById('signedInEmail').textContent=user.email||'Account';
+ document.getElementById('authGate').style.display='none';document.getElementById('appShell').style.display='grid';
+ await loadCloudData();
+}
+function rowWithId(x){return {...x,id:x.id||uid()}}
+async function loadCloudData(){
+ if(!currentUser)return;
+ authMsg.textContent='';
+ try{
+  const names=['transactions','sales','inventory','customers'];
+  const results=await Promise.all(names.map(t=>sb.from(t).select('*').eq('user_id',currentUser.id)));
+  for(let i=0;i<results.length;i++)if(results[i].error)throw results[i].error;
+  const [tr,sa,pr,cu]=results.map(x=>x.data||[]);
+  const remote={transactions:tr.map(x=>({id:x.id,description:x.description,category:x.category,type:x.type,amount:String(x.amount),date:x.transaction_date})),
+   sales:sa.map(x=>({id:x.id,item:x.item,customer:x.customer||'',amount:String(x.amount),payment:x.payment_method,date:x.sale_date})),
+   products:pr.map(x=>({id:x.id,name:x.name,sku:x.sku||'',qty:String(x.quantity),price:String(x.unit_price)})),
+   customers:cu.map(x=>({id:x.id,name:x.name,phone:x.phone||'',email:x.email||'',date:x.created_at?.slice(0,10)||new Date().toISOString().slice(0,10)}))};
+  const local=JSON.parse(localStorage.getItem(KEY)||'{"transactions":[],"sales":[],"products":[],"customers":[]}');
+  const remoteEmpty=names.every(t=>remote[t].length===0);
+  const localHas=names.some(t=>(local[t]||[]).length>0);
+  if(remoteEmpty&&localHas){
+   const ok=confirm('We found records saved in this browser. Import them into your new account so you can keep them?');
+   if(ok){data=local;await pushAllLocal();}
+   else data=remote;
+  }else if(!remoteEmpty){
+   // Merge unique local records not already present in the cloud; never discard browser data silently.
+   data=remote;
+   for(const t of names){
+    const cloudIds=new Set(remote[t].map(x=>x.id));
+    const extras=(local[t]||[]).filter(x=>x.id&&cloudIds.has(x.id)===false);
+    if(extras.length){data[t].push(...extras);await syncTable(t,extras);}
+   }
+  }else data=remote;
+  localStorage.setItem(KEY,JSON.stringify(data));render();
+  const {data:profile,error:profileError}=await sb.from('business_profiles').select('*').eq('user_id',currentUser.id).maybeSingle();
+  if(profileError)throw profileError;
+  if(!profile){
+   const {error}=await sb.from('business_profiles').upsert({user_id:currentUser.id,business_name:user.user_metadata?.business_name||'My Business',country_code:'NG',currency_code:currencyCode});
+   if(error)throw error;
+  }else if(profile.currency_code){currencyCode=profile.currency_code;localStorage.setItem(CURRENCY_KEY,currencyCode);currencySelect.value=currencyCode;render();}
+ }catch(err){console.error(err);alert('Cloud sync could not finish: '+err.message+'. Your browser records are still kept on this device.');}
+}
+function dbRows(table,items){
+ return items.map(x=>{
+  const base={id:x.id||uid(),user_id:currentUser.id};
+  if(table==='transactions')return {...base,description:x.description,category:x.category||'Other',type:x.type,amount:Number(x.amount),transaction_date:x.date};
+  if(table==='sales')return {...base,item:x.item,customer:x.customer||null,amount:Number(x.amount),payment_method:x.payment||'Other',sale_date:x.date};
+  if(table==='inventory')return {...base,name:x.name,sku:x.sku||null,quantity:Number(x.qty||0),unit_price:Number(x.price||0)};
+  return {...base,name:x.name,phone:x.phone||null,email:x.email||null};
+ });
+}
+async function syncTable(table,items){
+ if(!currentUser||!items.length)return;
+ const rows=dbRows(table,items);const {error}=await sb.from(table).upsert(rows);
+ if(error)throw error;
+}
+async function pushAllLocal(){
+ for(const table of ['transactions','sales','inventory','customers'])await syncTable(table,data[table]||[]);
+}
+const originalSave=save;
+save=()=>{localStorage.setItem(KEY,JSON.stringify(data));render();if(currentUser){pushAllLocal().catch(e=>{console.error(e);alert('Saved on this device, but cloud sync failed: '+e.message);});}};
+sb.auth.getSession().then(({data:{session}})=>{if(session)activateUser(session.user);});
+sb.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_IN'&&session&&!currentUser)activateUser(session.user);});
 </script>
 </body></html>
