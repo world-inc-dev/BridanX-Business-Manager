@@ -957,7 +957,7 @@ function openBulkStockReceipt(){
    parsed.push({product,qty,cost});
   }
   const ref=o.reference||'DELIVERY-'+Date.now().toString().slice(-8),date=o.movement_date||today();
-  for(const x of parsed){const previous=Number(x.product.qty||0),next=previous+x.qty,oldCost=Number(x.product.cost||0);if(!recordLocalStockMovement(x.product,x.qty,'stock_received','Supplier delivery received',ref))return false;x.product.cost=String(next>0?(previous*oldCost+x.qty*x.cost)/next:x.cost);x.product.supplier_name=o.supplier_name||x.product.supplier_name||'';x.product.last_received_date=date;}
+  for(const x of parsed){const previous=Number(x.product.qty||0),next=previous+x.qty,oldCost=Number(x.product.cost||0);if(!recordLocalStockMovement(x.product,x.qty,'stock_received','Supplier delivery received',ref))return false;if(inventoryMovements[0])inventoryMovements[0].movement_date=date;x.product.cost=String(next>0?(previous*oldCost+x.qty*x.cost)/next:x.cost);x.product.supplier_name=o.supplier_name||x.product.supplier_name||'';x.product.last_received_date=date;}
   alert('Stock received for '+parsed.length+' product line(s). Quantities and weighted-average purchase costs have been updated. No payment was recorded; enter an expense separately only when the supplier is actually paid.');
  });
 }
