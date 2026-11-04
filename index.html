@@ -488,6 +488,24 @@ body{background:radial-gradient(ellipse at 70% -18%,rgba(44,103,190,.25),transpa
  <header class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="btn mobile-menu" id="menuBtn" type="button" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false"><span aria-hidden="true">☰</span></button><div><div class="eyebrow">BRIDANX BUSINESS MANAGER</div><h1 id="pageTitle">Overview</h1></div></div><div class="top-actions"><div id="accountBar"><span class="account-label">SIGNED IN AS</span><span class="auth-business-name" id="signedInBusinessName">My Business</span><button class="btn sign-out-btn" id="signOutBtn" type="button"><span aria-hidden="true">↪</span> Sign out</button></div><select id="currencySelect" aria-label="Display currency" class="date-pill" style="max-width:170px;background:#0c202d;color:var(--text);border:1px solid var(--line)"></select><div class="live-timebox"><span class="live-status"><i></i> LIVE</span><strong id="liveClock">--:--:--</strong><small id="liveDate">Loading local time…</small></div><div class="date-pill" id="today"></div><img class="profile-mark" src="assets/bridanx-mark.svg" alt="BridanX"></div></header>
  <section class="view active" id="overview">
   <div class="overview-heading">
+  <section class="card overview-assistant" id="bxAssistant">
+   <div class="section-head"><div><div class="eyebrow">BRIDANX SMART ASSISTANT</div><h2>Your business and platform AI assistant</h2><p>Ask questions about your business, records, finances, accounting, payroll and activity across the platform. Actions are previewed before saving.</p></div><span class="stat-icon">✦</span></div>
+   <div class="field"><label for="bxCommand">Your instruction</label><textarea id="bxCommand" rows="3" placeholder="Example: I sold 5 bags of rice at 30,000 each to John. He paid 100,000 cash." style="width:100%;resize:vertical;background:#081b27;border:1px solid var(--line);border-radius:11px;padding:12px;color:var(--text)"></textarea></div>
+   <div class="overview-assistant-actions"><button class="btn primary" id="bxInterpret" type="button">Understand instruction</button><button class="btn" id="bxVoiceCommand" type="button">🎙 Speak instruction</button><span id="bxAssistantStatus" aria-live="polite">It will prepare a preview before saving anything.</span></div>
+   <div id="bxAssistantPreview" style="display:none;margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#081b27"></div>
+   <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)">
+    <div style="flex:1;min-width:190px"><strong>Business health check</strong><p style="margin:4px 0 0;color:var(--muted);font-size:12px">Get a quick summary from your saved records. This analysis does not change anything.</p></div>
+    <button class="btn" id="bxAnalyze" type="button">✦ Analyze my business</button>
+   </div>
+   <div id="bxInsights" aria-live="polite" style="display:none;margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#081b27"></div>
+   <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line)">
+    <strong>Ask me anything about your business</strong>
+    <p style="margin:4px 0 10px;color:var(--muted);font-size:12px">Ask in everyday English about sales, expenses, stock, customers, debts, accounting, payroll, suppliers, attendance, leave requests and your business activity log.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="bxQuestion" type="text" placeholder="Ask about any business record or platform activity…" style="flex:1;min-width:210px;background:#081b27;border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--text)"><button class="btn primary" id="bxAskQuestion" type="button">Ask question</button><button class="btn" id="bxVoiceChat" type="button">🎙 Talk</button></div><p id="bxVoiceStatus" aria-live="polite" style="margin:7px 0 0;color:var(--muted);font-size:11px">Use your microphone to ask a question and hear the answer. Microphone permission is required.</p>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:9px" aria-label="Example business questions"><button class="btn" type="button" data-bx-question="How much do customers owe me?">Customer debts</button><button class="btn" type="button" data-bx-question="What is my total income?">Total income</button><button class="btn" type="button" data-bx-question="What are my total expenses?">Total expenses</button><button class="btn" type="button" data-bx-question="What is my net profit?">Net position</button><button class="btn" type="button" data-bx-question="Which product sells the most?">Top-selling item</button><button class="btn" type="button" data-bx-question="Which items should I restock?">Low stock</button></div>
+    <div id="bxAnswer" aria-live="polite" style="display:none;margin-top:12px;padding:13px;border:1px solid var(--line);border-radius:11px;background:#0b2230"></div>
+   </div>
+  </section>
    <div><div class="eyebrow">PERFORMANCE SNAPSHOT</div><h2>Your business at a glance</h2><p>A clear view of your finances, customers, and business activity, based on your saved records.</p></div>
    <div class="overview-actions"><button class="btn" data-go="reports" type="button">View reports ↗</button><button class="btn primary" id="quickAdd" type="button">＋ Record transaction</button></div>
   </div>
@@ -508,24 +526,7 @@ body{background:radial-gradient(ellipse at 70% -18%,rgba(44,103,190,.25),transpa
   </div>
   <div class="section-head overview-table-head"><div><h2>Recent transactions</h2><p>A quick look at your latest business records</p></div><button class="btn primary" id="overviewAddTransaction" type="button">＋ Add transaction</button></div>
   <div class="card table-card"><div class="table-wrap"><table><thead><tr><th>Description</th><th>Category</th><th>Type</th><th>Date</th><th>Amount</th><th>Actions</th></tr></thead><tbody id="recentRows"></tbody></table></div></div>
-  <section class="card overview-assistant" id="bxAssistant">
-   <div class="section-head"><div><div class="eyebrow">BRIDANX SMART ASSISTANT</div><h2>Record business activity in everyday language</h2><p>Review the assistant's preview before anything is saved.</p></div><span class="stat-icon">✦</span></div>
-   <div class="field"><label for="bxCommand">Your instruction</label><textarea id="bxCommand" rows="3" placeholder="Example: I sold 5 bags of rice at 30,000 each to John. He paid 100,000 cash." style="width:100%;resize:vertical;background:#081b27;border:1px solid var(--line);border-radius:11px;padding:12px;color:var(--text)"></textarea></div>
-   <div class="overview-assistant-actions"><button class="btn primary" id="bxInterpret" type="button">Understand instruction</button><button class="btn" id="bxVoiceCommand" type="button">🎙 Speak instruction</button><span id="bxAssistantStatus" aria-live="polite">It will prepare a preview before saving anything.</span></div>
-   <div id="bxAssistantPreview" style="display:none;margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#081b27"></div>
-   <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)">
-    <div style="flex:1;min-width:190px"><strong>Business health check</strong><p style="margin:4px 0 0;color:var(--muted);font-size:12px">Get a quick summary from your saved records. This analysis does not change anything.</p></div>
-    <button class="btn" id="bxAnalyze" type="button">✦ Analyze my business</button>
-   </div>
-   <div id="bxInsights" aria-live="polite" style="display:none;margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#081b27"></div>
-   <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line)">
-    <strong>Ask about your business</strong>
-    <p style="margin:4px 0 10px;color:var(--muted);font-size:12px">Have a natural conversation with your AI assistant about your business, performance and saved records.</p>
-    <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="bxQuestion" type="text" placeholder="Ask or speak to your assistant…" style="flex:1;min-width:210px;background:#081b27;border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--text)"><button class="btn primary" id="bxAskQuestion" type="button">Ask question</button><button class="btn" id="bxVoiceChat" type="button">🎙 Talk</button></div><p id="bxVoiceStatus" aria-live="polite" style="margin:7px 0 0;color:var(--muted);font-size:11px">Use your microphone to ask a question and hear the answer. Microphone permission is required.</p>
-    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:9px" aria-label="Example business questions"><button class="btn" type="button" data-bx-question="How much do customers owe me?">Customer debts</button><button class="btn" type="button" data-bx-question="What is my total income?">Total income</button><button class="btn" type="button" data-bx-question="What are my total expenses?">Total expenses</button><button class="btn" type="button" data-bx-question="What is my net profit?">Net position</button><button class="btn" type="button" data-bx-question="Which product sells the most?">Top-selling item</button><button class="btn" type="button" data-bx-question="Which items should I restock?">Low stock</button></div>
-    <div id="bxAnswer" aria-live="polite" style="display:none;margin-top:12px;padding:13px;border:1px solid var(--line);border-radius:11px;background:#0b2230"></div>
-   </div>
-  </section>
+
  </section>
  <section class="view" id="transactions"><div class="section-head"><div><h2>Income & expenses</h2><p>Record and review money moving in and out of your business.</p></div><button class="btn primary" id="addTransaction">＋ Add transaction</button></div><div class="toolbar"><input class="field-input" id="transactionSearch" placeholder="Search transactions…" style="background:#0c202d;border:1px solid var(--line);color:var(--text);padding:10px 12px;border-radius:10px;min-width:220px"></div><div class="card table-card"><div class="table-wrap"><table><thead><tr><th>Description</th><th>Category</th><th>Type</th><th>Date</th><th>Amount</th><th>Actions</th></tr></thead><tbody id="transactionRows"></tbody></table></div></div></section>
  <section class="view" id="sales"><div class="section-head"><div><h2>Sales</h2><p>Keep track of orders and completed sales.</p></div><button class="btn primary" id="addSale">＋ Record sale</button></div><div class="card table-card"><div class="table-wrap"><table><thead><tr><th>Sale / item</th><th>Customer</th><th>Date</th><th>Payment</th><th>Amount</th><th>Actions</th></tr></thead><tbody id="salesRows"></tbody></table></div></div></section>
@@ -1259,7 +1260,7 @@ async function bxAnswerBusinessQuestion(){
   const value=products.reduce((s,p)=>s+Number(p.qty||0)*Number(p.cost||p.purchase_price||0),0);
   answer='Estimated inventory cost value from available quantity and recorded unit cost is '+bxMoney(value)+'. Items without a recorded cost may be understated.';
  }else{
-  answer='I can answer questions about customer debts, highest sales month, total income, total expenses, net position, top-selling products, low stock, customer count, and inventory value. Try one of those questions.';
+  answer='I can help with questions about your business records and platform modules. Try asking about sales, expenses, stock, customers, debts, accounting, payroll, suppliers or activity history.';
  }
  out.textContent='I’m reviewing your business records and preparing an answer…';out.style.display='block';
  const askButton=document.getElementById('bxAskQuestion');askButton.disabled=true;
@@ -1271,8 +1272,24 @@ async function bxAnswerBusinessQuestion(){
     sales:sales.slice(-60).map(x=>({item:x.item,customer:x.customer,quantity:Number(x.quantity||1),amount:Number(x.amount||0),date:x.date,payment:x.payment})),
     products:products.slice(0,100).map(x=>({name:x.name,sku:x.sku,quantity:Number(x.qty||0),selling_price:Number(x.price||0),unit_cost:Number(x.cost||0),reorder_level:Number(x.reorder_level??x.min_stock??0)})),
     debts:debts.slice(0,100).map(x=>({customer:x.customer_name,description:x.description,total:Number(x.total_amount||0),paid:Number(x.amount_paid||0),due_date:x.due_date})),
-    customers:(data.customers||[]).slice(0,100).map(x=>({name:x.name,phone:x.phone})),
-    totals:{recorded_income:income.reduce((n,x)=>n+Number(x.amount||0),0),recorded_expenses:expenses.reduce((n,x)=>n+Number(x.amount||0),0),outstanding_customer_debt:outstanding}
+    customers:(data.customers||[]).slice(0,100).map(x=>({name:x.name,phone:x.phone,email:x.email,added_date:x.date})),
+    accounting:{
+     accounts:(accounting.accounts||[]).slice(0,80).map(x=>({code:x.code,name:x.name,account_type:x.account_type})),
+     recent_journal_entries:(accounting.entries||[]).slice(0,40).map(x=>({entry_date:x.entry_date,reference:x.reference,memo:x.memo,description:x.description,status:x.status})),
+     journal_line_count:(accounting.lines||[]).length,
+     recent_documents:(accounting.documents||[]).slice(0,30).map(x=>({document_type:x.document_type,document_number:x.document_number,customer_name:x.customer_name,supplier_name:x.supplier_name,issue_date:x.issue_date,due_date:x.due_date,total_amount:x.total_amount,status:x.status}))
+    },
+    workforce:{
+     employees:(employees||[]).slice(0,80).map(x=>({name:x.full_name,role:x.role_title,employment_type:x.employment_type,base_salary:Number(x.base_salary||0),active:!!x.is_active})),
+     payroll:(payrollRecords||[]).slice(0,60).map(x=>({pay_period:x.pay_period,employee_id:x.employee_id,basic_pay:Number(x.basic_pay||0),allowances:Number(x.allowances||0),tax_deduction:Number(x.tax_deduction||0),pension_deduction:Number(x.pension_deduction||0),other_deductions:Number(x.other_deductions||0),net_pay:Number(x.net_pay||0),payment_status:x.payment_status}))
+    },
+    operations:{
+     suppliers:(suppliers||[]).slice(0,80).map(x=>({name:x.name,phone:x.phone,email:x.email,address:x.address,notes:x.notes})),
+     attendance:(attendanceRecords||[]).slice(0,60).map(x=>({attendance_date:x.attendance_date,employee_id:x.employee_id,status:x.status,check_in:x.check_in,check_out:x.check_out,notes:x.notes})),
+     leave_requests:(leaveRequests||[]).slice(0,60).map(x=>({employee_id:x.employee_id,leave_type:x.leave_type,start_date:x.start_date,end_date:x.end_date,reason:x.reason,status:x.status,created_at:x.created_at})),
+     recent_activity_log:(auditRecords||[]).slice(0,80).map(x=>({changed_at:x.changed_at,table_name:x.table_name,action:x.action,record_id:x.record_id,details:x.details}))
+    },
+    totals:{recorded_income:income.reduce((n,x)=>n+Number(x.amount||0),0),recorded_expenses:expenses.reduce((n,x)=>n+Number(x.amount||0),0),outstanding_customer_debt:outstanding,sales_count:sales.length,inventory_items:products.length,customer_count:(data.customers||[]).length,employee_count:(employees||[]).length,payroll_records:(payrollRecords||[]).length,supplier_count:(suppliers||[]).length,attendance_records:(attendanceRecords||[]).length,leave_requests:(leaveRequests||[]).length,activity_log_records:(auditRecords||[]).length,accounting_accounts:(accounting.accounts||[]).length,journal_entries:(accounting.entries||[]).length,accounting_documents:(accounting.documents||[]).length}
    };
    const {data:aiResult,error}=await sb.functions.invoke('bx-business-assistant',{body:{mode:'chat',question:input.value.trim(),context:compact,currency:currencyCode,country:businessProfile.country_code||''},headers:{Authorization:'Bearer '+token}});
    if(error)throw new Error(error.message||'AI assistant connection failed.');
