@@ -1530,16 +1530,23 @@ async function loadCloudData(){
   localStorage.setItem(KEY,JSON.stringify(data));render();
   const {data:profile,error:profileError}=await sb.from('business_profiles').select('*').eq('user_id',currentUser.id).maybeSingle();
   if(profileError)throw profileError;
-  if(!profile){
-   businessProfile={...businessProfile,business_name:currentUser.user_metadata?.business_name||'My Business',contact_email:currentUser.email||''};
-   const {error}=await sb.from('business_profiles').upsert({user_id:currentUser.id,...businessProfile});
-   if(error)throw error;
-  }else businessProfile={...businessProfile,...profile};
+  if(profile){
+   businessProfile={...businessProfile,...profile};
+  }else{
+   // A profile is optional until the owner explicitly saves Business settings.
+   // Do not attempt an automatic INSERT during cloud sync; this avoids turning
+   // a profile-policy issue into a cloud-sync failure for a newly registered user.
+   businessProfile={business_name:currentUser.user_metadata?.business_name||'My Business',country_code:'UG',currency_code:'UGX',contact_phone:'',contact_email:currentUser.email||''};
+  }
   setBusinessHeader(businessProfile.business_name||'My Business');
   const selectedCountry=businessProfile.country_code||'UG';
   const countryDefaultCurrency=currencyForCountry(selectedCountry);
-  if(!profile||!businessProfile.currency_code||businessProfile.currency_code!==countryDefaultCurrency){businessProfile.country_code=selectedCountry;businessProfile.currency_code=countryDefaultCurrency;const {error:currencyFixError}=await sb.from('business_profiles').upsert({user_id:currentUser.id,...businessProfile});if(currencyFixError)throw currencyFixError;}
-  currencyCode=businessProfile.currency_code;localStorage.setItem(CURRENCY_KEY,currencyCode);currencySelect.value=currencyCode;showBusinessProfile();render();
+  if(profile&&(!businessProfile.currency_code||businessProfile.currency_code!==countryDefaultCurrency)){
+   businessProfile.country_code=selectedCountry;businessProfile.currency_code=countryDefaultCurrency;
+   const {error:currencyFixError}=await sb.from('business_profiles').upsert({user_id:currentUser.id,...businessProfile});
+   if(currencyFixError)console.warn('Business profile currency normalization deferred:',currencyFixError.message);
+  }
+  currencyCode=businessProfile.currency_code||countryDefaultCurrency||'UGX';localStorage.setItem(CURRENCY_KEY,currencyCode);currencySelect.value=currencyCode;showBusinessProfile();render();
  }catch(err){console.error(err);alert('Cloud sync could not finish: '+err.message+'. Your browser records are still kept on this device.');}
 }
 function dbRows(table,items){
