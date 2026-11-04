@@ -179,8 +179,10 @@ async function loadCloudData(){
    products:pr.map(x=>({id:x.id,name:x.name,sku:x.sku||'',qty:String(x.quantity),price:String(x.unit_price)})),
    customers:cu.map(x=>({id:x.id,name:x.name,phone:x.phone||'',email:x.email||'',date:x.created_at?.slice(0,10)||new Date().toISOString().slice(0,10)}))};
   const local=JSON.parse(localStorage.getItem(KEY)||'{"transactions":[],"sales":[],"products":[],"customers":[]}');
-  const remoteEmpty=names.every(t=>remote[t].length===0);
-  const localHas=names.some(t=>(local[t]||[]).length>0);
+  const localKey=t=>t==='inventory'?'products':t;
+  const remoteKey=t=>t==='inventory'?'products':t;
+  const remoteEmpty=names.every(t=>(remote[remoteKey(t)]||[]).length===0);
+  const localHas=names.some(t=>(local[localKey(t)]||[]).length>0);
   if(remoteEmpty&&localHas){
    const ok=confirm('We found records saved in this browser. Import them into your new account so you can keep them?');
    if(ok){data=local;await pushAllLocal();}
@@ -189,10 +191,11 @@ async function loadCloudData(){
    // Merge unique local records not already present in the cloud; never discard browser data silently.
    data=remote;
    for(const t of names){
-    const cloudIds=new Set(remote[t].map(x=>x.id));
-    const extras=(local[t]||[]).filter(x=>!cloudIds.has(x.id));
+    const key=localKey(t), cloudKey=remoteKey(t);
+    const cloudIds=new Set((remote[cloudKey]||[]).map(x=>x.id));
+    const extras=(local[key]||[]).filter(x=>!cloudIds.has(x.id));
     extras.forEach(x=>{if(!x.id)x.id=uid()});
-    if(extras.length){data[t].push(...extras);await syncTable(t,extras);}
+    if(extras.length){data[key].push(...extras);await syncTable(t,extras);}
    }
   }else data=remote;
   localStorage.setItem(KEY,JSON.stringify(data));render();
