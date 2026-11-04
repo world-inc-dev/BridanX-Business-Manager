@@ -135,6 +135,63 @@ th{background:#0a1d2b}
  .mobile-menu{width:40px;height:40px}
 }
 </style>
+
+<style>
+/* Screen-fit layout: prevent page-level horizontal scrolling and keep every navigation item reachable */
+html,body{width:100%;max-width:100%;overflow-x:hidden}
+#appShell,.shell,.main,.view{min-width:0;max-width:100%}
+.shell{width:100%;overflow-x:clip}
+.main{width:100%;overflow-x:clip}
+.sidebar{min-width:0;max-width:100vw}
+.sidebar>div:nth-child(2){min-height:0;display:flex;flex:1;flex-direction:column}
+.sidebar .nav{min-height:0;max-height:calc(100vh - 190px);overflow-y:auto;overscroll-behavior:contain;padding:2px 3px 10px;scrollbar-width:thin;scrollbar-color:#315866 transparent}
+.nav button{min-width:0;white-space:normal;line-height:1.3}
+.nav button .ico{flex:0 0 20px}
+.table-wrap{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.view>.grid,.view>.card,.view>article,.toolbar,.section-head{min-width:0;max-width:100%}
+img,svg,canvas{max-width:100%}
+@media(max-width:900px){
+ .sidebar{width:min(310px,88vw);height:100vh;height:100dvh;max-height:100dvh;inset:0 auto 0 0;padding-top:max(16px,env(safe-area-inset-top));padding-bottom:max(18px,env(safe-area-inset-bottom));overflow:hidden}
+ .sidebar>div:nth-child(2){overflow:hidden}
+ .sidebar .nav{max-height:none;flex:1;overflow-y:auto}
+ .side-bottom{flex:none;margin-top:10px}
+ .main{padding-left:clamp(12px,3vw,24px);padding-right:clamp(12px,3vw,24px)}
+ .topbar{min-width:0;flex-wrap:wrap;align-items:center;row-gap:12px}
+ .topbar>div:first-child{min-width:0;flex:1}
+ .top-actions{min-width:0;max-width:100%;flex-wrap:wrap;justify-content:flex-end}
+ #accountBar{display:flex;align-items:center;gap:7px;min-width:0}
+ .auth-business-name{max-width:42vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+@media(max-width:600px){
+ .main{padding:14px 12px 30px}
+ .topbar{gap:10px;margin-bottom:18px}
+ .topbar h1{font-size:clamp(20px,6vw,25px);overflow-wrap:anywhere}
+ .top-actions{width:100%;justify-content:space-between;gap:7px}
+ #accountBar{flex:1;min-width:0}
+ #accountBar .btn{flex:none;padding:8px 10px}
+ .auth-business-name{max-width:calc(100vw - 150px)}
+ .top-actions .profile-mark{width:34px;height:34px;flex:none}
+ .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .content-grid,.report-grid{grid-template-columns:minmax(0,1fr)}
+ .dashboard-hero{max-width:100%;overflow:hidden}
+ .quick-actions{max-width:100%;overflow-wrap:anywhere}
+ .view>.section-head{min-width:0}
+ .view>.section-head>div{min-width:0}
+ .toolbar>*{max-width:100%;min-width:0}
+ .card{min-width:0}
+}
+@media(max-width:380px){
+ .stats{grid-template-columns:minmax(0,1fr)}
+ .top-actions{flex-wrap:wrap}
+ .top-actions .profile-mark{display:none}
+ .account-line{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-height:560px) and (max-width:900px){
+ .sidebar{gap:10px}
+ .sidebar .nav{max-height:none}
+ .side-bottom{display:none}
+}
+</style>
 </head>
 <body>
 
