@@ -676,7 +676,7 @@ let KEY=BASE_KEY, CURRENCY_KEY=BASE_CURRENCY_KEY;
 function emptyBusinessData(){return {transactions:[],sales:[],products:[],customers:[],debts:[]};}
 function normalizeBusinessData(value){return {transactions:Array.isArray(value?.transactions)?value.transactions:[],sales:Array.isArray(value?.sales)?value.sales:[],products:Array.isArray(value?.products)?value.products:[],customers:Array.isArray(value?.customers)?value.customers:[],debts:Array.isArray(value?.debts)?value.debts:[]};}
 let data;try{data=normalizeBusinessData(JSON.parse(localStorage.getItem(KEY)||'null'));}catch(error){console.warn('Saved browser data could not be read; starting with an empty workspace:',error);data=emptyBusinessData();}
-let authMode='login', currentUser=null, cloudBusy=false, cloudSyncEnabled=true, activationPromise=null;
+let authMode='login', currentUser=null, cloudBusy=false, cloudSyncEnabled=true, activationPromise=null, pendingOpenPlans=false;
 
 let accounting={accounts:[],entries:[],lines:[],documents:[]}, accountingRange={from:'',to:''};
 let employees=[],payrollRecords=[];
@@ -1421,6 +1421,7 @@ document.getElementById('authForm').addEventListener('submit',async e=>{
 function setBusinessHeader(name){const el=document.getElementById('signedInBusinessName');if(el){const value=String(name||'My Business').trim()||'My Business';el.textContent=value;el.title=value;}}
 function uid(){return crypto.randomUUID()}
 async function activateUser(user,openPlansAfterLogin=false){
+ if(openPlansAfterLogin)pendingOpenPlans=true;
  if(activationPromise){await activationPromise;return;}
  activationPromise=(async()=>{
   cloudSyncEnabled=true;
@@ -1450,7 +1451,7 @@ async function activateUser(user,openPlansAfterLogin=false){
    if(!notice){notice=document.createElement('div');notice.id='loginLoadNotice';notice.className='notice';notice.style.margin='12px 20px';document.getElementById('appShell').querySelector('main')?.prepend(notice);}
    notice.textContent='You are signed in, but some sections could not load ('+moduleErrors.join(', ')+'). Refresh the page or check your connection. Your account remains signed in.';
   }else document.getElementById('loginLoadNotice')?.remove();
-  if(openPlansAfterLogin){const plansButton=document.querySelector('#nav [data-view="plans"]');if(plansButton)plansButton.click();}
+  if(pendingOpenPlans){const plansButton=document.querySelector('#nav [data-view="plans"]');if(plansButton)plansButton.click();pendingOpenPlans=false;}
  })();
  try{await activationPromise;}finally{activationPromise=null;}
 }
@@ -1553,6 +1554,6 @@ async function pushAllLocal(){
 const originalSave=save;
 save=()=>{localStorage.setItem(KEY,JSON.stringify(data));render();if(currentUser&&cloudSyncEnabled){pushAllLocal().then(()=>localStorage.setItem(KEY,JSON.stringify(data))).catch(e=>{console.error(e);alert('Saved on this device, but cloud sync failed: '+e.message);});}};
 sb.auth.getSession().then(({data:{session}})=>{if(session)activateUser(session.user);});
-sb.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_IN'&&session&&!currentUser)activateUser(session.user);});
+sb.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_IN'&&session&&!currentUser){const openPlans=localStorage.getItem('bx_open_plans_after_signup')==='yes';setTimeout(()=>{activateUser(session.user,openPlans).then(()=>{if(openPlans)localStorage.removeItem('bx_open_plans_after_signup');}).catch(error=>console.error('Account activation failed:',error));},0);}});
 </script>
 </body></html>
