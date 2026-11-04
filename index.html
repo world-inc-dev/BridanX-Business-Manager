@@ -98,7 +98,7 @@ function render(){
  const inc=data.transactions.filter(x=>x.type==='Income').reduce((a,x)=>a+Number(x.amount),0), exp=data.transactions.filter(x=>x.type==='Expense').reduce((a,x)=>a+Number(x.amount),0), profit=inc-exp;
  $('totalIncome').textContent=money(inc);$('totalExpenses').textContent=money(exp);$('netProfit').textContent=money(profit);$('customerCount').textContent=data.customers.length;
  const localDate=d=>{const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+day};
- const now=new Date(),todayKey=localDate(now),weekStart=new Date(now.getFullYear(),now.getMonth(),now.getDate()-((now.getDay()+6)%7)),weekKey=localDate(weekStart),monthKey=todayKey.slice(0,7);
+ const periodNow=new Date(),todayKey=localDate(periodNow),weekStart=new Date(periodNow.getFullYear(),periodNow.getMonth(),periodNow.getDate()-((periodNow.getDay()+6)%7)),weekKey=localDate(weekStart),monthKey=todayKey.slice(0,7);
  const periodTotals=(start,end)=>{const rows=data.transactions.filter(x=>{const date=String(x.date||'');return date>=start&&date<=end});const income=rows.filter(x=>x.type==='Income').reduce((a,x)=>a+Number(x.amount||0),0),expenses=rows.filter(x=>x.type==='Expense').reduce((a,x)=>a+Number(x.amount||0),0);return {income,expenses,net:income-expenses,count:rows.length}};
  const periods=[['today',periodTotals(todayKey,todayKey)],['week',periodTotals(weekKey,todayKey)],['month',periodTotals(monthKey+'-01',todayKey)]];
  periods.forEach(([name,p])=>{$(name+'Net').textContent=money(p.net);$(name+'Meta').textContent='Income '+money(p.income)+' · Expenses '+money(p.expenses)+' · '+p.count+' transactions'});
