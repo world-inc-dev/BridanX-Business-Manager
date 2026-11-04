@@ -223,7 +223,7 @@ img,svg,canvas{max-width:100%}
    <div class="field" id="businessField" style="display:none"><label>Business name</label><input id="authBusiness" autocomplete="organization"></div>
    <div class="field"><label>Email address</label><input id="authEmail" type="email" required autocomplete="email"></div>
    <div class="field"><label>Password</label><input id="authPassword" type="password" required minlength="6" autocomplete="current-password"></div>
-   <button class="btn primary" id="authSubmit" style="width:100%">Sign in</button>
+   <button class="btn primary" id="authSubmit" type="submit" style="width:100%">Sign in</button>
   </form>
   <div id="authMessage"></div>
  </div>
@@ -530,7 +530,15 @@ $('today').textContent=new Date().toLocaleDateString('en-UG',{weekday:'short',da
 render();
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="this.onerror=null;this.src='https://unpkg.com/@supabase/supabase-js@2';"></script>
+<style>
+/* Keep the sign-in panel and its feedback contained; prevent stray dashboard text showing behind it. */
+#authGate{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;overflow-y:auto;padding:24px 16px;background:#06131f}
+#authGate .auth-card{position:relative;z-index:1;width:min(100%,440px);max-height:calc(100dvh - 40px);overflow-y:auto;margin:auto}
+#authGate #authMessage{display:block;min-height:24px;max-width:100%;overflow-wrap:anywhere;white-space:normal;line-height:1.5}
+#authGate~.shell{visibility:hidden}
+#authSubmit:disabled{opacity:.75;cursor:wait}
+</style>
 <script>
 const SB_URL='https://yuzzpyellyqicyezjvka.supabase.co';
 const SB_KEY='sb_publishable_xg0I3fVNZCuBLIqnBw-0YA_6yL9QbGC';
@@ -928,6 +936,7 @@ $('bxInterpret').onclick=async()=>{
 $('bxCommand').addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')$('bxInterpret').click()});
 
 const authMsg=document.getElementById('authMessage');
+if(!window.supabase||typeof window.supabase.createClient!=='function'){authMsg.textContent='Secure login service did not load. Refresh this page or check your internet connection.';document.getElementById('authSubmit').disabled=true;}
 function setAuthMode(mode){
  authMode=mode;
  document.getElementById('authTitle').textContent=mode==='login'?'Welcome back':'Create your business account';
