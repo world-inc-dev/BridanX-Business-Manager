@@ -530,6 +530,24 @@ $('today').textContent=new Date().toLocaleDateString('en-UG',{weekday:'short',da
 render();
 </script>
 
+<script>
+(function(){
+ const form=document.getElementById('authForm'),message=document.getElementById('authMessage');
+ if(!form||!message)return;
+ form.addEventListener('submit',function(event){
+  if(!window.__bxAuthHandlerReady){
+   event.preventDefault();event.stopImmediatePropagation();
+   message.textContent='The sign-in system did not finish loading. Your email and password are still here. Refresh the page; if this continues, check your internet connection.';
+  }
+ },true);
+ window.addEventListener('error',function(event){
+  if(!window.__bxAuthHandlerReady&&event.message)message.textContent='The page could not finish loading the sign-in system. Refresh the page. Details: '+event.message;
+ });
+ window.addEventListener('unhandledrejection',function(){
+  if(!window.__bxAuthHandlerReady)message.textContent='The sign-in system could not start. Refresh the page and try again.';
+ });
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="this.onerror=null;this.src='https://unpkg.com/@supabase/supabase-js@2';"></script>
 <style>
 /* Keep the sign-in panel and its feedback contained; prevent stray dashboard text showing behind it. */
@@ -975,7 +993,8 @@ document.getElementById('authForm').addEventListener('submit',async e=>{
   submit.disabled=false;submit.textContent=creatingAccount?'Create account':'Sign in';
  }
 });
-document.getElementById('signOutBtn').onclick=async()=>{await sb.auth.signOut();currentUser=null;isPlatformOwner=false;cloudSyncEnabled=true;data=emptyBusinessData();render();document.getElementById('appShell').style.display='none';document.getElementById('authGate').style.display='grid';};
+ window.__bxAuthHandlerReady=true;
+ document.getElementById('signOutBtn').onclick=async()=>{await sb.auth.signOut();currentUser=null;isPlatformOwner=false;cloudSyncEnabled=true;data=emptyBusinessData();render();document.getElementById('appShell').style.display='none';document.getElementById('authGate').style.display='grid';};
 function setBusinessHeader(name){const el=document.getElementById('signedInBusinessName');if(el){const value=String(name||'My Business').trim()||'My Business';el.textContent=value;el.title=value;}}
 function uid(){return crypto.randomUUID()}
 async function activateUser(user,openPlansAfterLogin=false){
