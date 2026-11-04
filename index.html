@@ -214,18 +214,52 @@ img,svg,canvas{max-width:100%}
 #authMessage{min-height:20px;color:#ffb8a8;font-size:12px;margin-top:10px}
 #accountBar{display:flex;align-items:center;gap:8px}.auth-business-name{font-size:12px;font-weight:750;color:#e9f4f5;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style>
-<div id="authGate">
- <div class="auth-card">
-  <div class="brand" style="padding:0 0 20px"><img class="brand-mark" src="assets/bridanx-mark.svg" alt="BridanX logo"><div><strong>BridanX</strong><small>BUSINESS MANAGER</small></div></div>
-  <h2 id="authTitle">Welcome back</h2><p>Sign in to securely access your business records from your devices.</p>
-  <div class="auth-tabs"><button class="btn primary" id="showLogin" type="button">Sign in</button><button class="btn" id="showSignup" type="button">Create account</button></div>
-  <form id="authForm">
-   <div class="field" id="businessField" style="display:none"><label>Business name</label><input id="authBusiness" autocomplete="organization"></div>
-   <div class="field"><label>Email address</label><input id="authEmail" type="email" required autocomplete="email"></div>
-   <div class="field"><label>Password</label><input id="authPassword" type="password" required minlength="6" autocomplete="current-password"></div>
-   <button class="btn primary" id="authSubmit" type="submit" style="width:100%">Sign in</button>
-  </form>
-  <div id="authMessage"></div>
+<style>
+/* Professional BridanX welcome and authentication landing screen */
+#authGate.welcome-gate{position:fixed;inset:0;z-index:20;display:grid;place-items:center;overflow-y:auto;padding:clamp(18px,4vw,54px);background:radial-gradient(ellipse at 16% 8%,rgba(27,126,132,.24),transparent 38%),radial-gradient(ellipse at 88% 90%,rgba(31,105,115,.16),transparent 34%),#06131f}
+.welcome-layout{width:min(1120px,100%);display:grid;grid-template-columns:minmax(0,1.12fr) minmax(340px,.78fr);align-items:center;gap:clamp(28px,6vw,78px)}
+.welcome-intro{min-width:0;display:flex;flex-direction:column;min-height:570px;justify-content:space-between;padding:12px 0}
+.welcome-brand{display:flex;align-items:center;gap:13px}.welcome-brand strong{display:block;font-size:17px;letter-spacing:.4px}.welcome-brand small{display:block;margin-top:3px;color:#83aeb6;font-size:9px;font-weight:850;letter-spacing:1.8px}
+.welcome-copy{padding:42px 0}.welcome-kicker{display:inline-flex;align-items:center;gap:10px;color:#75e8d9;font-size:10px;font-weight:850;letter-spacing:1.8px}.welcome-kicker i{width:7px;height:7px;border-radius:50%;background:#48e3ce;box-shadow:0 0 0 5px #36d9c51c}
+.welcome-copy h1{max-width:650px;margin:19px 0 16px;font-size:clamp(38px,5.2vw,62px);line-height:1.06;letter-spacing:-2.5px;font-weight:820}.welcome-copy h1 em{font-style:normal;color:#53dfcf}.welcome-copy>p{max-width:570px;margin:0;color:#a6bdc5;font-size:15px;line-height:1.8}
+.welcome-points{display:grid;gap:18px;margin-top:34px;max-width:560px}.welcome-points>div{display:flex;align-items:flex-start;gap:14px}.welcome-points>div>b{display:grid;place-items:center;width:31px;height:31px;flex:none;border:1px solid #28616a;border-radius:10px;color:#68e5d5;font-size:10px}.welcome-points span{display:grid;gap:3px}.welcome-points strong{font-size:13px;color:#eaf8f8}.welcome-points small{font-size:11px;color:#91aab4;line-height:1.5}
+.welcome-footer{display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap;color:#6f939e;font-size:9px;font-weight:800;letter-spacing:1.4px}
+.auth-card.welcome-auth{width:100%;padding:clamp(22px,3vw,34px);border-radius:23px;background:linear-gradient(150deg,rgba(16,43,58,.98),rgba(8,26,39,.99));border-color:#28505c;box-shadow:0 28px 90px #0008}
+.welcome-auth-heading{display:flex;align-items:center;gap:13px}.welcome-auth-icon{width:43px;height:43px;display:grid;place-items:center;border-radius:14px;background:linear-gradient(145deg,#48e3ce,#159b9b);color:#042b2b;font-weight:950;box-shadow:0 8px 24px #20c8b52b}.welcome-auth-heading h2{margin:4px 0 0;font-size:24px;letter-spacing:-.7px}.welcome-auth>p{margin:17px 0 20px;color:#9ab2bc;font-size:12px;line-height:1.65}
+.welcome-auth .auth-tabs{padding:4px;border:1px solid #234352;border-radius:13px;background:#071a27}.welcome-auth .auth-tabs button{padding:10px;border-radius:9px}.welcome-auth .field label{font-size:11px;font-weight:700;color:#b4cbd1}.welcome-auth .field input{min-height:46px}.welcome-auth #authSubmit{min-height:47px;margin-top:5px}.welcome-security{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:20px;padding-top:15px;border-top:1px solid #1d3c4c;color:#7899a4;font-size:9px;line-height:1.5}.welcome-security span{color:#65dfd1}.welcome-security i{width:3px;height:3px;border-radius:50%;background:#527580}
+@media(max-width:760px){#authGate.welcome-gate{align-items:start;padding:20px 15px}.welcome-layout{grid-template-columns:1fr;gap:20px;max-width:520px}.welcome-intro{min-height:0;padding:4px 0}.welcome-copy{padding:30px 0 15px}.welcome-copy h1{font-size:clamp(34px,9vw,48px);letter-spacing:-1.7px}.welcome-copy>p{font-size:13px}.welcome-points{grid-template-columns:1fr;gap:13px;margin-top:23px}.welcome-footer{display:none}.auth-card.welcome-auth{padding:22px}.welcome-auth-heading h2{font-size:22px}}
+@media(max-height:720px) and (min-width:761px){#authGate.welcome-gate{align-items:start}.welcome-intro{min-height:0}.welcome-copy{padding:25px 0}.welcome-points{gap:12px;margin-top:20px}}
+</style>
+
+<div id="authGate" class="welcome-gate">
+ <div class="welcome-layout">
+  <section class="welcome-intro">
+   <div class="welcome-brand"><img class="brand-mark" src="assets/bridanx-mark.svg" alt="BridanX logo"><div><strong>BridanX</strong><small>BUSINESS MANAGER</small></div></div>
+   <div class="welcome-copy">
+    <span class="welcome-kicker"><i></i> YOUR BUSINESS. ONE CLEAR VIEW.</span>
+    <h1>Run your business with <em>clarity and confidence.</em></h1>
+    <p>Bring your daily business activity together. Track money, manage customers and stock, and understand your performance from one organised workspace.</p>
+    <div class="welcome-points">
+     <div><b>01</b><span><strong>Know your numbers</strong><small>Monitor income, expenses and business performance.</small></span></div>
+     <div><b>02</b><span><strong>Stay organised</strong><small>Keep sales, inventory and customer records together.</small></span></div>
+     <div><b>03</b><span><strong>Make informed decisions</strong><small>Use clear reports to understand how your business is doing.</small></span></div>
+    </div>
+   </div>
+   <div class="welcome-footer"><span>BRIDANX DIGITAL BUSINESS HUB</span><span>We Build the Digital Future</span></div>
+  </section>
+  <section class="auth-card welcome-auth">
+   <div class="welcome-auth-heading"><span class="welcome-auth-icon">BX</span><div><span class="eyebrow">YOUR WORKSPACE STARTS HERE</span><h2 id="authTitle">Welcome back</h2></div></div>
+   <p id="authIntro">Sign in to securely access your business workspace.</p>
+   <div class="auth-tabs"><button class="btn primary" id="showLogin" type="button">Sign in</button><button class="btn" id="showSignup" type="button">Create account</button></div>
+   <form id="authForm">
+    <div class="field" id="businessField" style="display:none"><label>Business name</label><input id="authBusiness" autocomplete="organization" placeholder="Your business name"></div>
+    <div class="field"><label>Email address</label><input id="authEmail" type="email" required autocomplete="email" placeholder="you@example.com"></div>
+    <div class="field"><label>Password</label><input id="authPassword" type="password" required minlength="6" autocomplete="current-password" placeholder="Enter your password"></div>
+    <button class="btn primary" id="authSubmit" type="submit" style="width:100%">Sign in securely <span aria-hidden="true">→</span></button>
+   </form>
+   <div id="authMessage" aria-live="polite"></div>
+   <div class="welcome-security"><span>▣</span> Secure account access <i></i> Your business records stay private to your account</div>
+  </section>
  </div>
 </div>
 <div class="shell" id="appShell" style="display:none">
