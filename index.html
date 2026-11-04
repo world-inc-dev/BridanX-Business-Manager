@@ -26,7 +26,7 @@
  <div class="side-bottom"><b>BridanX Digital Business Hub</b>One clear view of your business. Your records are saved in this browser on this device.</div>
 </aside>
 <main class="main">
- <header class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="btn mobile-menu" id="menuBtn">☰</button><div><div class="eyebrow">BUSINESS WORKSPACE</div><h1 id="pageTitle">Overview</h1></div></div><div class="top-actions"><div class="date-pill" id="today"></div><div class="avatar">BX</div></div></header>
+ <header class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="btn mobile-menu" id="menuBtn">☰</button><div><div class="eyebrow">BUSINESS WORKSPACE</div><h1 id="pageTitle">Overview</h1></div></div><div class="top-actions"><select id="currencySelect" aria-label="Display currency" class="date-pill" style="max-width:170px;background:#0c202d;color:var(--text);border:1px solid var(--line)"></select><div class="date-pill" id="today"></div><div class="avatar">BX</div></div></header>
  <section class="view active" id="overview">
   <div class="notice">Welcome to your business workspace. Add your first transaction, sale, product or customer to get started.</div>
   <div class="grid stats">
@@ -50,9 +50,16 @@
 </main></div>
 <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitle">Add record</h3><button class="close" id="closeModal">×</button></div><form id="recordForm"></form></div></div>
 <script>
-const KEY='bridanx-business-manager-v1';
+const KEY='bridanx-business-manager-v1', CURRENCY_KEY='bridanx-business-manager-currency';
 let data=JSON.parse(localStorage.getItem(KEY)||'{"transactions":[],"sales":[],"products":[],"customers":[]}');
-const $=id=>document.getElementById(id), money=n=>'₦'+Number(n||0).toLocaleString('en-NG',{maximumFractionDigits:2});
+const $=id=>document.getElementById(id);
+const currencies=[
+ ['Nigeria','NGN','en-NG'],['Uganda','UGX','en-UG'],['Kenya','KES','en-KE'],['Tanzania','TZS','sw-TZ'],['Rwanda','RWF','rw-RW'],['Ghana','GHS','en-GH'],['South Africa','ZAR','en-ZA'],['Egypt','EGP','ar-EG'],['Zambia','ZMW','en-ZM'],['Malawi','MWK','en-MW'],['Zimbabwe','ZiG','en-ZW'],['Botswana','BWP','en-BW'],['Namibia','NAD','en-NA'],['Ethiopia','ETB','am-ET'],['Morocco','MAD','ar-MA'],['Senegal','XOF','fr-SN'],['Cameroon','XAF','fr-CM'],['United States','USD','en-US'],['United Kingdom','GBP','en-GB'],['Eurozone','EUR','en-IE'],['Canada','CAD','en-CA'],['Australia','AUD','en-AU'],['India','INR','en-IN'],['China','CNY','zh-CN'],['Japan','JPY','ja-JP'],['United Arab Emirates','AED','en-AE'],['Saudi Arabia','SAR','en-SA'],['Brazil','BRL','pt-BR'],['Switzerland','CHF','de-CH']
+];
+let currencyCode=localStorage.getItem(CURRENCY_KEY)||'NGN';
+function currencyInfo(){return currencies.find(x=>x[1]===currencyCode)||currencies[0]}
+function money(n){const [country,code,locale]=currencyInfo();try{return new Intl.NumberFormat(locale,{style:'currency',currency:code,maximumFractionDigits:2}).format(Number(n||0))}catch(e){return code+' '+Number(n||0).toLocaleString()}}
+function updateCurrencyLabels(){document.querySelectorAll('[data-currency-label]').forEach(el=>el.textContent=currencyCode);}
 const save=()=>{localStorage.setItem(KEY,JSON.stringify(data));render()};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const empty='<tr><td colspan="5"><div class="empty">No records yet. Add your first record to see it here.</div></td></tr>';
@@ -72,16 +79,21 @@ function render(){
  const now=new Date();const chartDates=Array.from({length:6},(_,i)=>new Date(now.getFullYear(),now.getMonth()-5+i,1));const months=chartDates.map(d=>d.toLocaleDateString('en-US',{month:'short'}));const vals=chartDates.map(d=>{return data.transactions.filter(x=>{const z=new Date(x.date);return z.getMonth()===d.getMonth()&&z.getFullYear()===d.getFullYear()}).reduce((a,x)=>a+(x.type==='Income'?Number(x.amount):-Number(x.amount)),0)});const max=Math.max(1,...vals.map(Math.abs));
  $('chart').innerHTML=vals.map((v,i)=>'<div class="bar-wrap"><div class="bar" title="'+money(v)+'" style="height:'+Math.max(3,Math.abs(v)/max*82)+'%"></div><small>'+months[i]+'</small></div>').join('');
 }
+const currencySelect=$('currencySelect');
+currencySelect.innerHTML=currencies.map(([country,code])=>'<option value="'+code+'">'+country+' ('+code+')</option>').join('');
+currencySelect.value=currencyCode;
+currencySelect.onchange=()=>{currencyCode=currencySelect.value;localStorage.setItem(CURRENCY_KEY,currencyCode);updateCurrencyLabels();render()};
+updateCurrencyLabels();
 const today=()=>new Date().toISOString().slice(0,10);
 function field(label,name,type='text',required=true,extra=''){return '<div class="field"><label>'+label+'</label><input name="'+name+'" type="'+type+'" '+(required?'required':'')+' '+extra+'></div>'}
 function select(label,name,options){return '<div class="field"><label>'+label+'</label><select name="'+name+'">'+options.map(x=>'<option>'+x+'</option>').join('')+'</select></div>'}
 function openModal(title,fields,onSave){$('modalTitle').textContent=title;$('recordForm').innerHTML=fields+'<div class="form-actions"><button type="button" class="btn" id="cancelForm">Cancel</button><button class="btn primary">Save record</button></div>';$('modalBackdrop').classList.add('open');$('cancelForm').onclick=closeModal;$('recordForm').onsubmit=e=>{e.preventDefault();const obj=Object.fromEntries(new FormData(e.target));onSave(obj);closeModal();save()}}
 function closeModal(){$('modalBackdrop').classList.remove('open')}
 $('closeModal').onclick=closeModal;$('modalBackdrop').onclick=e=>{if(e.target===$('modalBackdrop'))closeModal()};
-function transaction(){openModal('Add transaction',field('Description','description')+select('Type','type',['Income','Expense'])+select('Category','category',['Sales','Services','Stock / supplies','Transport','Rent','Utilities','Marketing','Salaries','Other'])+field('Amount (NGN)','amount','number',true,'min="1" step="1"')+field('Date','date','date',true,'value="'+today()+'"'),o=>data.transactions.push(o))}
+function transaction(){openModal('Add transaction',field('Description','description')+select('Type','type',['Income','Expense'])+select('Category','category',['Sales','Services','Stock / supplies','Transport','Rent','Utilities','Marketing','Salaries','Other'])+field('Amount (<span data-currency-label>NGN</span>)','amount','number',true,'min="1" step="1"')+field('Date','date','date',true,'value="'+today()+'"'),o=>data.transactions.push(o))}
 $('addTransaction').onclick=transaction;$('quickAdd').onclick=transaction;
-$('addSale').onclick=()=>openModal('Record a sale',field('Item / service','item')+field('Customer name','customer','text',false)+field('Amount (NGN)','amount','number',true,'min="1"')+select('Payment method','payment',['Cash','Mobile Money','Bank transfer','Card','Other'])+field('Date','date','date',true,'value="'+today()+'"'),o=>{data.sales.push(o);data.transactions.push({description:'Sale: '+o.item,category:'Sales',type:'Income',amount:o.amount,date:o.date})});
-$('addProduct').onclick=()=>openModal('Add product',field('Product name','name')+field('SKU / product code','sku','text',false)+field('Quantity in stock','qty','number',true,'min="0"')+field('Unit price (NGN)','price','number',true,'min="0"'),o=>data.products.push(o));
+$('addSale').onclick=()=>openModal('Record a sale',field('Item / service','item')+field('Customer name','customer','text',false)+field('Amount (<span data-currency-label>NGN</span>)','amount','number',true,'min="1"')+select('Payment method','payment',['Cash','Mobile Money','Bank transfer','Card','Other'])+field('Date','date','date',true,'value="'+today()+'"'),o=>{data.sales.push(o);data.transactions.push({description:'Sale: '+o.item,category:'Sales',type:'Income',amount:o.amount,date:o.date})});
+$('addProduct').onclick=()=>openModal('Add product',field('Product name','name')+field('SKU / product code','sku','text',false)+field('Quantity in stock','qty','number',true,'min="0"')+field('Unit price (<span data-currency-label>NGN</span>)','price','number',true,'min="0"'),o=>data.products.push(o));
 $('addCustomer').onclick=()=>openModal('Add customer',field('Customer name','name')+field('Phone number','phone','tel',false)+field('Email address','email','email',false)+field('Date added','date','date',true,'value="'+today()+'"'),o=>data.customers.push(o));
 $('transactionSearch').oninput=render;
 $('exportCsv').onclick=()=>{const rows=[['Description','Category','Type','Date','Amount'],...data.transactions.map(x=>[x.description,x.category,x.type,x.date,x.amount])];const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='bridanx-transactions.csv';a.click();URL.revokeObjectURL(a.href)};
