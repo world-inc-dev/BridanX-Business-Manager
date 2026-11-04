@@ -1397,9 +1397,10 @@ document.getElementById('authForm').addEventListener('submit',async e=>{
  try{
   let result;
   if(creatingAccount){
+   // Set this before sign-up: Supabase may emit SIGNED_IN before signUp() resolves.
+   localStorage.setItem('bx_open_plans_after_signup','yes');
    result=await sb.auth.signUp({email,password,options:{data:{business_name:document.getElementById('authBusiness').value.trim()||'My Business'}}});
    if(result.error)throw result.error;
-   localStorage.setItem('bx_open_plans_after_signup','yes');
    if(!result.data.session){authMsg.textContent='Account created. Check your email to confirm, then sign in.';return;}
   }else{
    result=await sb.auth.signInWithPassword({email,password});
@@ -1408,7 +1409,12 @@ document.getElementById('authForm').addEventListener('submit',async e=>{
   if(!result.data?.user)throw new Error('Sign-in did not return a user. Please try again.');
   const openPlans=localStorage.getItem('bx_open_plans_after_signup')==='yes';
   await activateUser(result.data.user,openPlans);
-  if(openPlans)localStorage.removeItem('bx_open_plans_after_signup');
+  if(openPlans){
+   // Explicitly select the subscription view after account activation.
+   const plansButton=document.querySelector('#nav [data-view="plans"]');
+   if(plansButton)plansButton.click();
+   localStorage.removeItem('bx_open_plans_after_signup');
+  }
  }catch(error){
   console.error('Authentication / account opening failed:',error);
   authMsg.textContent=(error?.message||'Unable to sign in. Please check your connection and try again.')+' Your details have been kept so you can retry.';
