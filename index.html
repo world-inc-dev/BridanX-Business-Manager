@@ -1108,6 +1108,23 @@ function openWorkItem(existing={}){
   if(!o.title?.trim()){alert('Enter a title or description.');return;}
   if(businessType==='school'&&!o.class_name?.trim()){alert('Enter the student class or year.');return;}
   if(businessType==='transport'&&(!o.origin?.trim()||!o.destination?.trim())){alert('Enter both the pickup point and destination.');return;}
+  if(businessType==='manufacturing'){
+   const planned=Number(o.planned_quantity||0),made=Number(o.produced_quantity||0),waste=Number(o.rejected_quantity||0);
+   if(planned>0&&made+waste>planned){alert('Produced plus rejected quantity cannot exceed the planned quantity.');return;}
+  }
+  if(businessType==='construction'){
+   const pct=Number(o.completion_percent||0);if(pct<0||pct>100){alert('Project completion must be between 0 and 100%.');return;}
+   if(o.start_date&&o.due_date&&o.due_date<o.start_date){alert('Target completion cannot be before the planned start date.');return;}
+  }
+  if(businessType==='services'&&o.start_date&&o.due_date&&o.due_date<o.start_date){alert('Due date cannot be before the start date.');return;}
+  if(businessType==='hospitality'){
+   if(o.check_in&&o.check_out&&o.check_out<=o.check_in){alert('Check-out must be after check-in.');return;}
+   if(o.guest_count&&Number(o.guest_count)<1){alert('Guest count must be at least one.');return;}
+  }
+  if(businessType==='agent'&&['opening_float','opening_efloat','closing_float','closing_efloat','commission'].some(k=>Number(o[k]||0)<0)){alert('Float and commission amounts cannot be negative.');return;}
+  if(businessType==='salon'&&o.duration_minutes&&Number(o.duration_minutes)<5){alert('Service duration must be at least five minutes.');return;}
+  if(businessType==='transport'&&['distance_km','odometer','fuel_litres'].some(k=>Number(o[k]||0)<0)){alert('Distance, odometer and fuel values cannot be negative.');return;}
+  if(businessType==='agriculture'&&['input_quantity','harvest_quantity'].some(k=>Number(o[k]||0)<0)){alert('Farm input and harvest quantities cannot be negative.');return;}
   const details={notes:o.notes||''};
   extras.forEach(f=>{const v=o[f.name];details[f.name]=f.type==='number'?Number(v||0):(v||'');});
   if(businessType==='school')Object.assign(details,{admission_number:o.admission_number||'',class_name:o.class_name||'',academic_term:o.academic_term||'',fees_paid:Number(o.fees_paid||0)});
