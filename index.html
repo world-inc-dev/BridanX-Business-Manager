@@ -1436,6 +1436,14 @@ async function activateUser(user,openPlansAfterLogin=false){
   try{data=normalizeBusinessData(JSON.parse(localStorage.getItem(KEY)||'null'));}catch(_){data=emptyBusinessData();}
   currentUser=user;setBusinessHeader(user.user_metadata?.business_name||'My Business');
   document.getElementById('authGate').style.display='none';document.getElementById('appShell').style.display='grid';
+  // Show the subscription screen immediately; cloud/profile loading continues afterwards.
+  if(pendingOpenPlans){
+   const plansButton=document.querySelector('#nav button[data-view="plans"]');
+   document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x===plansButton));
+   document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='plans'));
+   const title=document.getElementById('pageTitle');if(title)title.textContent='Plans & subscription';
+   pendingOpenPlans=false;
+  }
   const moduleErrors=[];
   // Resolve the subscription before loading paid modules. Their database
   // triggers correctly reject Free-plan writes, so do not seed/load them
@@ -1457,7 +1465,6 @@ async function activateUser(user,openPlansAfterLogin=false){
    if(!notice){notice=document.createElement('div');notice.id='loginLoadNotice';notice.className='notice';notice.style.margin='12px 20px';document.getElementById('appShell').querySelector('main')?.prepend(notice);}
    notice.textContent='You are signed in, but some sections could not load ('+moduleErrors.join(', ')+'). Refresh the page or check your connection. Your account remains signed in.';
   }else document.getElementById('loginLoadNotice')?.remove();
-  if(pendingOpenPlans){const plansButton=document.querySelector('#nav [data-view="plans"]');if(plansButton)plansButton.click();pendingOpenPlans=false;}
  })();
  try{await activationPromise;}finally{activationPromise=null;}
 }
