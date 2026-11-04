@@ -107,7 +107,7 @@ function render(){
 const currencySelect=$('currencySelect');
 currencySelect.innerHTML=currencies.map(([country,code])=>'<option value="'+code+'">'+country+' ('+code+')</option>').join('');
 currencySelect.value=currencyCode;
-currencySelect.onchange=()=>{currencyCode=currencySelect.value;localStorage.setItem(CURRENCY_KEY,currencyCode);$('profileCurrency').value=currencyCode;updateCurrencyLabels();render()};
+currencySelect.onchange=async()=>{currencyCode=currencySelect.value;localStorage.setItem(CURRENCY_KEY,currencyCode);$('profileCurrency').value=currencyCode;businessProfile.currency_code=currencyCode;updateCurrencyLabels();render();if(currentUser){const {error}=await sb.from('business_profiles').upsert({user_id:currentUser.id,...businessProfile});if(error)console.error('Currency profile sync failed:',error.message)}};
 updateCurrencyLabels();
 const today=()=>new Date().toISOString().slice(0,10);
 const countryOptions=[['Nigeria','NG'],['Uganda','UG'],['Kenya','KE'],['Tanzania','TZ'],['Rwanda','RW'],['Ghana','GH'],['South Africa','ZA'],['Egypt','EG'],['Zambia','ZM'],['Malawi','MW'],['Zimbabwe','ZW'],['Botswana','BW'],['Namibia','NA'],['Ethiopia','ET'],['Morocco','MA'],['Senegal','SN'],['Cameroon','CM'],['United States','US'],['United Kingdom','GB'],['Canada','CA'],['Australia','AU'],['India','IN'],['China','CN'],['Japan','JP'],['United Arab Emirates','AE'],['Saudi Arabia','SA'],['Brazil','BR'],['Switzerland','CH']];
