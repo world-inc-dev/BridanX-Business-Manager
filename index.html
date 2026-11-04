@@ -337,7 +337,7 @@ img,svg,canvas{max-width:100%}
 <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitle">Add record</h3><button class="close" id="closeModal">×</button></div><form id="recordForm"></form></div></div>
 <script>
 /* Global DOM helper is available even if an earlier application script fails to initialise. */
-window.$=window.$||function(id){return document.getElementById(id)};
+var $=window.$=function(id){return document.getElementById(id)};
 const BASE_KEY='bridanx-business-manager-v1', BASE_CURRENCY_KEY='bridanx-business-manager-currency';
 let KEY=BASE_KEY, CURRENCY_KEY=BASE_CURRENCY_KEY;
 function emptyBusinessData(){return {transactions:[],sales:[],products:[],customers:[],debts:[]};}
