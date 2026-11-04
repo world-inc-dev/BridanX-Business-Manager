@@ -787,24 +787,22 @@ function applyInventoryLabels(){
 function openStockMovement(product){
  const c=inventoryLabels[businessType]||inventoryLabels.general;
  const typeOptions=['Stock received','Stock issued / used','Damaged / wastage','Customer return','Correction'];
- const html=select('Movement type','movement_type',typeOptions)+field('Quantity','quantity','number',true,'min="0.001" step="0.001"')+field('Purchase cost per unit ('+currencyCode+')','unit_cost','number',false,'min="0" step="0.01" value="'+Number(product.cost||0)+'"')+field('Reason / notes','reason','text',true)+field('Supplier / reference','reference','text',false)+field('Movement date','movement_date','date',true,'value="'+today()+'"');
+ const html=select('Movement type','movement_type',typeOptions)+select('Correction direction','correction_direction',['Increase stock','Decrease stock'])+field('Quantity','quantity','number',true,'min="0.001" step="0.001"')+field('Purchase cost per unit ('+currencyCode+')','unit_cost','number',false,'min="0" step="0.01" value="'+Number(product.cost||0)+'"')+field('Reason / notes','reason','text',true)+field('Supplier / reference','reference','text',false)+field('Movement date','movement_date','date',true,'value="'+today()+'"');
  openModal(c.adjust+': '+product.name,html,async o=>{
   const quantity=Number(o.quantity||0),previous=Number(product.qty||0);
   if(!(quantity>0)){alert('Enter a quantity greater than zero.');return;}
   let change=quantity;
   if(o.movement_type==='Stock issued / used'||o.movement_type==='Damaged / wastage')change=-quantity;
   if(o.movement_type==='Correction'){
-   const direction=prompt('For a correction, type ADD to increase stock or REMOVE to decrease stock.');
-   if(!direction||!['ADD','REMOVE'].includes(direction.trim().toUpperCase())){alert('Correction cancelled. Enter ADD or REMOVE.');return;}
-   if(direction.trim().toUpperCase()==='REMOVE')change=-quantity;
+   if(o.correction_direction==='Decrease stock')change=-quantity;
   }
   const next=previous+change;
   if(next<0){alert('Not enough stock. Available quantity: '+previous);return;}
   const oldCost=Number(product.cost||0),enteredCost=Number(o.unit_cost||0);
   const nextCost=change>0&&o.movement_type==='Stock received'&&enteredCost>0?(previous*oldCost+quantity*enteredCost)/Math.max(next,0.000001):oldCost;
   const movementType=({ 'Stock received':'stock_received','Stock issued / used':'stock_issued','Damaged / wastage':'damaged','Customer return':'customer_return','Correction':'correction'})[o.movement_type];
-  const movement={user_id:currentUser.id,inventory_id:product.id||null,product_name:product.name,movement_type:movementType,quantity_change:change,previous_quantity:previous,new_quantity:next,unit_cost:enteredCost||oldCost,reason:o.reason.trim(),reference:o.reference||null,movement_date:o.movement_date||today()};
-  if(currentUser){
+  const movement={user_id:currentUser?.id||null,inventory_id:product.id||null,product_name:product.name,movement_type:movementType,quantity_change:change,previous_quantity:previous,new_quantity:next,unit_cost:enteredCost||oldCost,reason:o.reason.trim(),reference:o.reference||null,movement_date:o.movement_date||today()};
+  if(currentUser&&cloudSyncEnabled){
    try{
     product.id=product.id||uid();await syncTable('inventory',[{...product,qty:String(next),cost:String(nextCost)}]);
     const {error}=await sb.from('inventory_movements').insert(movement);
@@ -814,12 +812,13 @@ function openStockMovement(product){
   product.qty=String(next);product.cost=String(nextCost);
   if(!Array.isArray(inventoryMovements))inventoryMovements=[];
   inventoryMovements.unshift({...movement,id:uid(),created_at:new Date().toISOString()});
-  save();if(currentUser)loadOperations().catch(error=>console.warn('Stock movement refresh failed:',error));
+  save();if(currentUser&&cloudSyncEnabled)loadOperations().catch(error=>console.warn('Stock movement refresh failed:',error));
  });
 }
 function dailyBusinessStock(){
  const t=businessActionTerms[businessType]||businessActionTerms.general;
- openModal(t.stock,field(t.stockItem,'name')+field('SKU / product code','sku','text',false)+field('Quantity in stock','qty','number',true,'min="0"')+field('Selling price ('+currencyCode+')','price','number',true,'min="0"')+field('Purchase cost per unit ('+currencyCode+')','cost','number',true,'min="0" step="0.01" value="0"'),o=>data.products.push(o));
+ const c=inventoryLabels[businessType]||inventoryLabels.general;
+ openModal(t.stock,field(c.name,'name')+field('SKU / product code','sku','text',false)+field('Opening quantity','qty','number',true,'min="0" step="0.001"')+field('Selling price ('+currencyCode+')','price','number',true,'min="0"')+field('Purchase cost per unit ('+currencyCode+')','cost','number',true,'min="0" step="0.01" value="0"'),o=>{o.id=uid();data.products.push(o)});
 }
 function dailyBusinessExpense(){
  const t=businessActionTerms[businessType]||businessActionTerms.general;
@@ -1046,7 +1045,7 @@ $('dailyUpdateStock').onclick=dailyBusinessStock;
 $('dailyAddDebt').onclick=dailyBusinessDebt;
 const businessSaleForms={general:{title:'Record a sale',item:'Item / service',detail:'Additional details'},retail:{title:'Record a shop sale',item:'Product name',detail:'Brand / size / product variant'},restaurant:{title:'Record food / drink sale',item:'Food or drink item',detail:'Table / order reference'},salon:{title:'Record client payment',item:'Service or product',detail:'Stylist / appointment reference'},pharmacy:{title:'Record medicine sale',item:'Medicine / product name',detail:'Strength / batch reference'},agent:{title:'Record customer transaction',item:'Service / transaction type',detail:'Transaction reference / network'},services:{title:'Record service payment',item:'Service / job name',detail:'Job / project reference'},school:{title:'Record school fee / payment',item:'Payment type (fees, transport, etc.)',detail:'Student name / class / term'},transport:{title:'Record trip / delivery income',item:'Trip or delivery description',detail:'Vehicle / route / trip reference'},manufacturing:{title:'Record manufactured product sale',item:'Product name',detail:'Batch / production reference'},agriculture:{title:'Record produce sale',item:'Crop / produce name',detail:'Farm / grade / harvest reference'},hospitality:{title:'Record guest payment',item:'Room / service / item',detail:'Guest / room / booking reference'},construction:{title:'Record project payment',item:'Project / work description',detail:'Site / project phase / client reference'},other:{title:'Record a sale',item:'Item / service',detail:'Additional details'}};
 $('addSale').onclick=()=>{const cfg=businessSaleForms[businessType]||businessSaleForms.general;openModal(cfg.title,field(cfg.item,'item')+field('Customer / client name','customer','text',false)+field(cfg.detail,'business_detail','text',false)+field('Quantity','quantity','number',true,'min="0.01" step="0.01" value="1" data-calc-qty="quantity"')+field('Selling price per unit ('+currencyCode+')','unit_price','number',true,'min="0.01" step="0.01" data-calc-unit="unit_price"')+field('Calculated total ('+currencyCode+')','amount','number',true,'min="0.01" step="0.01" readonly data-calc-total="amount"')+select('Payment method','payment',['Cash','Mobile Money','Bank transfer','Card','Other'])+field('Date','date','date',true,'value="'+today()+'"'),o=>{const product=data.products.find(p=>String(p.name||'').trim().toLowerCase()===String(o.item||'').trim().toLowerCase());o.id=uid();o.quantity=Number(o.quantity||1);o.amount=(o.quantity*Number(o.unit_price||0)).toFixed(2);o.business_detail_label=cfg.detail;o.unit_cost_at_sale=product&&Number(product.cost)>0?Number(product.cost):null;data.sales.push(o);data.transactions.push({description:cfg.title+': '+o.item+(o.business_detail?' — '+o.business_detail:''),category:'Sales',type:'Income',amount:o.amount,date:o.date})})};
-$('addProduct').onclick=()=>openModal('Add product',field('Product name','name')+field('SKU / product code','sku','text',false)+field('Quantity in stock','qty','number',true,'min="0"')+field('Selling price ('+currencyCode+')','price','number',true,'min="0"')+field('Purchase cost per unit ('+currencyCode+')','cost','number',true,'min="0" step="0.01" value="0"'),o=>data.products.push(o));
+$('addProduct').onclick=()=>{const c=inventoryLabels[businessType]||inventoryLabels.general;openModal(c.product,field(c.name,'name')+field('SKU / product code','sku','text',false)+field('Opening quantity','qty','number',true,'min="0" step="0.001"')+field('Selling price ('+currencyCode+')','price','number',true,'min="0"')+field('Purchase cost per unit ('+currencyCode+')','cost','number',true,'min="0" step="0.01" value="0"'),o=>{o.id=uid();data.products.push(o)});};
 $('addDebt').onclick=()=>openModal('Add credit record',field('Customer name','customer_name')+field('Phone number','phone','tel',false)+field('Credit / item description','description')+field('Quantity','quantity','number',true,'min="0.01" step="0.01" value="1" data-calc-qty="quantity"')+field('Price per unit ('+currencyCode+')','unit_price','number',true,'min="0" step="0.01" data-calc-unit="unit_price"')+field('Calculated credit total ('+currencyCode+')','total_amount','number',true,'min="0.01" step="0.01" readonly data-calc-total="total_amount"')+field('Amount already paid ('+currencyCode+')','amount_paid','number',true,'min="0" step="0.01" value="0"')+field('Due date','due_date','date',false),o=>{o.total_amount=(Number(o.quantity)*Number(o.unit_price)).toFixed(2);if(Number(o.amount_paid)>Number(o.total_amount)){alert('Amount paid cannot exceed total credit.');return}data.debts.push(o)});
 $('addCustomer').onclick=()=>openModal('Add customer',field('Customer name','name')+field('Phone number','phone','tel',false)+field('Email address','email','email',false)+field('Date added','date','date',true,'value="'+today()+'"'),o=>data.customers.push(o));
 
@@ -1056,7 +1055,7 @@ function editRecord(type,id){
  const forms={
  transactions:['Edit transaction',field('Description','description')+select('Type','type',['Income','Expense'])+select('Category','category',['Sales','Services','Stock / supplies','Transport','Rent','Utilities','Marketing','Salaries','Other'])+field('Amount ('+currencyCode+')','amount','number',true,'min="1" step="1"')+field('Date','date','date'),o=>Object.assign(item,o)],
  sales:['Edit sale',field('Item / service','item')+field('Customer name','customer','text',false)+field('Quantity sold','quantity','number',true,'min="0.01" step="0.01" data-calc-qty="quantity"')+field('Selling price per unit ('+currencyCode+')','unit_price','number',true,'min="0.01" step="0.01" data-calc-unit="unit_price"')+field('Calculated sale total ('+currencyCode+')','amount','number',true,'min="0.01" step="0.01" readonly data-calc-total="amount"')+select('Payment method','payment',['Cash','Mobile Money','Bank transfer','Card','Other'])+field('Date','date','date'),o=>{const old=item.item,amount=Number(item.amount),date=item.date;Object.assign(item,o);item.quantity=Number(o.quantity||1);item.amount=(item.quantity*Number(o.unit_price||0)).toFixed(2);const matched=data.products.find(p=>String(p.name||'').trim().toLowerCase()===String(o.item||'').trim().toLowerCase());item.unit_cost_at_sale=matched&&Number(matched.cost)>0?Number(matched.cost):null;const linked=data.transactions.find(t=>t.description==='Sale: '+old&&Number(t.amount)===amount&&t.date===date&&t.category==='Sales');if(linked)Object.assign(linked,{description:'Sale: '+o.item,amount:item.amount,date:o.date})}],
- products:['Edit product',field('Product name','name')+field('SKU / product code','sku','text',false)+field('Quantity in stock','qty','number',true,'min="0"')+field('Selling price ('+currencyCode+')','price','number',true,'min="0"')+field('Purchase cost per unit ('+currencyCode+')','cost','number',true,'min="0" step="0.01"'),o=>Object.assign(item,o)],
+ products:['Edit product',field('Product name','name')+field('SKU / product code','sku','text',false)+field('Selling price ('+currencyCode+')','price','number',true,'min="0"')+field('Purchase cost per unit ('+currencyCode+')','cost','number',true,'min="0" step="0.01"'),o=>Object.assign(item,o)],
  customers:['Edit customer',field('Customer name','name')+field('Phone number','phone','tel',false)+field('Email address','email','email',false)+field('Date added','date','date'),o=>Object.assign(item,o)]
  };
  const form=forms[type];if(form)openModal(form[0],form[1],form[2],item);
