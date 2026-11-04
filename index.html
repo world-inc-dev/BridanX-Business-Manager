@@ -52,6 +52,13 @@
  <header class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="btn mobile-menu" id="menuBtn">☰</button><div><div class="eyebrow">BUSINESS WORKSPACE</div><h1 id="pageTitle">Overview</h1></div></div><div class="top-actions"><div id="accountBar"><span class="auth-email" id="signedInEmail"></span><button class="btn" id="signOutBtn" type="button">Sign out</button></div><select id="currencySelect" aria-label="Display currency" class="date-pill" style="max-width:170px;background:#0c202d;color:var(--text);border:1px solid var(--line)"></select><div class="date-pill" id="today"></div><div class="avatar">BX</div></div></header>
  <section class="view active" id="overview">
   <div class="notice">Welcome to your business workspace. Add your first transaction, sale, product or customer to get started.</div>
+  <section class="card" id="bxAssistant" style="margin:0 0 20px;border-color:#237267;background:linear-gradient(135deg,#10343b,#0c2230)">
+   <div class="section-head"><div><div class="eyebrow">BRIDANX SMART ASSISTANT</div><h2>Tell your business what happened</h2><p>Use everyday language to record sales, expenses and stock movements.</p></div><span class="stat-icon">✦</span></div>
+   <div class="field"><label for="bxCommand">Your instruction</label><textarea id="bxCommand" rows="3" placeholder="Example: I sold 5 bags of rice at 30,000 each to John. He paid 100,000 cash." style="width:100%;resize:vertical;background:#081b27;border:1px solid var(--line);border-radius:11px;padding:12px;color:var(--text)"></textarea></div>
+   <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center"><button class="btn primary" id="bxInterpret" type="button">Understand instruction</button><span id="bxAssistantStatus" style="font-size:12px;color:var(--muted)" aria-live="polite">It will prepare a preview before saving anything.</span></div>
+   <div id="bxAssistantPreview" style="display:none;margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#081b27"></div>
+   <div style="font-size:11px;color:#91aab4;margin-top:12px">Examples: “I paid 50,000 for rent”; “I added 20 bags of rice to stock”. Always review the preview before confirming.</div>
+  </section>
   <div class="grid stats">
    <article class="card"><div class="stat-top">Total income <span class="stat-icon">↗</span></div><div class="stat-value" id="totalIncome">₦0</div><div class="stat-note">Recorded income</div></article>
    <article class="card"><div class="stat-top">Total expenses <span class="stat-icon">↘</span></div><div class="stat-value" id="totalExpenses">₦0</div><div class="stat-note">Recorded expenses</div></article>
@@ -404,6 +411,67 @@ document.addEventListener('click',async e=>{
  if(pay)payPayroll(pay.dataset.payrollPay);
  if(slip)printPayslip(slip.dataset.payslip);
 });
+
+
+// BridanX command assistant: deterministic, review-before-save business actions.
+let bxPendingAction=null;
+function bxNumber(s){return Number(String(s||'').replace(/,/g,'').replace(/[^0-9.]/g,''))||0}
+function bxMoney(n){return money(n)}
+function bxInterpretCommand(raw){
+ const s=String(raw||'').trim();
+ if(!s)return {error:'Enter an instruction first.'};
+ // Sale: "sold 5 bags of rice at 30000 each to John, paid 100000"
+ let m=s.match(/(?:i\s+)?sold\s+(\d+(?:\.\d+)?)\s+(.+?)\s+(?:at|for)\s+([\d,]+(?:\.\d+)?)\s*(each|per\s+(?:item|unit))?(?:\s+(?:to|for)\s+([^,.]+))?/i);
+ if(m){
+  const qty=Number(m[1]),item=m[2].trim(),unit=bxNumber(m[3]),total=unit*(m[4]?qty:1),customer=(m[5]||'').trim();
+  const pm=s.match(/(?:paid|received|collected)\s+([\d,]+(?:\.\d+)?)/i);
+  const paid=pm?bxNumber(pm[1]):total;
+  if(!qty||!unit||paid>total)return {error:'Please check the quantity, price and amount paid. The amount paid cannot exceed the sale total.'};
+  const product=data.products.find(p=>String(p.name||'').toLowerCase()===item.toLowerCase());
+  if(product&&Number(product.qty)<qty)return {error:'Not enough '+item+' in stock. Available: '+product.qty+'. No records were changed.'};
+  return {type:'sale',qty,item,unit,total,paid,customer,productId:product?.id||null};
+ }
+ // Expense: "paid 50000 for rent" / "spent 50000 on transport"
+ m=s.match(/(?:i\s+)?(?:paid|spent|purchased)\s+([\d,]+(?:\.\d+)?)\s+(?:for|on|towards)\s+(.+)/i);
+ if(m){const amount=bxNumber(m[1]),description=m[2].trim().replace(/[.!?]+$/,'');if(!amount||!description)return {error:'Include an amount and what it was for.'};return {type:'expense',amount,description,category:/rent/i.test(description)?'Rent':/transport|fuel|taxi/i.test(description)?'Transport':/salary|wage/i.test(description)?'Salaries':/stock|suppl|goods|inventory/i.test(description)?'Stock / supplies':/market|advert/i.test(description)?'Marketing':'Other'};}
+ // Stock: "added 20 bags of rice to stock"
+ m=s.match(/(?:i\s+)?(?:added|received|restocked)\s+(\d+(?:\.\d+)?)\s+(.+?)\s+(?:to|into)\s+(?:the\s+)?(?:stock|inventory)/i);
+ if(m){const qty=Number(m[1]),item=m[2].trim();if(!qty)return {error:'Enter a valid stock quantity.'};const product=data.products.find(p=>String(p.name||'').toLowerCase()===item.toLowerCase());return {type:'stock',qty,item,productId:product?.id||null};}
+ return {error:'I could not confidently understand that instruction yet. Try a sale (“sold 3 chairs at 20,000 each to Mary”), an expense (“paid 50,000 for rent”), or stock (“added 10 boxes of soap to stock”).'};
+}
+function bxShowPreview(a){
+ const el=$('bxAssistantPreview');el.style.display='block';
+ if(a.error){el.innerHTML='<strong style="color:#ff9c9c">'+esc(a.error)+'</strong>';return;}
+ let lines=[];
+ if(a.type==='sale'){
+  lines=['Record sale: '+a.qty+' × '+a.item,'Sale total: '+bxMoney(a.total),'Payment received: '+bxMoney(a.paid),'Outstanding customer balance: '+bxMoney(a.total-a.paid),'Customer: '+(a.customer||'Not specified'),a.productId?'Reduce inventory by '+a.qty+' unit(s)':'No matching inventory item found; stock will not change'];
+ }else if(a.type==='expense')lines=['Record expense: '+a.description,'Category: '+a.category,'Amount: '+bxMoney(a.amount)];
+ else lines=['Update stock: '+a.item,'Quantity received: '+a.qty,a.productId?'Add to existing inventory':'Create a new inventory item (unit price will be 0 until edited)'];
+ el.innerHTML='<strong>Review these changes</strong><ul style="margin:8px 0 14px;padding-left:20px;color:#d7e6e9">'+lines.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul><button class="btn primary" id="bxConfirm" type="button">Confirm and save</button> <button class="btn" id="bxCancel" type="button">Cancel</button>';
+ $('bxConfirm').onclick=bxCommitAction;$('bxCancel').onclick=()=>{bxPendingAction=null;el.style.display='none';$('bxAssistantStatus').textContent='Cancelled. No records were changed.';};
+}
+function bxCommitAction(){
+ const a=bxPendingAction;if(!a)return;
+ const date=today();
+ if(a.type==='sale'){
+  data.sales.push({item:a.item,customer:a.customer,amount:String(a.total),payment:'Cash',date});
+  data.transactions.push({description:'Sale: '+a.item,category:'Sales',type:'Income',amount:String(a.total),date});
+  if(a.customer&&!data.customers.some(x=>String(x.name||'').toLowerCase()===a.customer.toLowerCase()))data.customers.push({name:a.customer,phone:'',email:'',date});
+  if(a.total>a.paid)data.debts.push({customer_name:a.customer||'Unspecified customer',phone:'',description:a.item+' · '+a.qty+' unit(s)',total_amount:String(a.total),amount_paid:String(a.paid),due_date:''});
+  if(a.productId){const p=data.products.find(x=>String(x.id)===String(a.productId));if(p)p.qty=String(Number(p.qty)-a.qty);}
+ }else if(a.type==='expense'){
+  data.transactions.push({description:a.description,category:a.category,type:'Expense',amount:String(a.amount),date});
+ }else if(a.type==='stock'){
+  const p=a.productId&&data.products.find(x=>String(x.id)===String(a.productId));
+  if(p)p.qty=String(Number(p.qty)+a.qty);else data.products.push({name:a.item,sku:'',qty:String(a.qty),price:'0'});
+ }
+ bxPendingAction=null;save();$('bxCommand').value='';$('bxAssistantPreview').style.display='none';$('bxAssistantStatus').textContent='Saved. Business records and dashboard have been updated.';
+}
+$('bxInterpret').onclick=()=>{
+ const a=bxInterpretCommand($('bxCommand').value);bxPendingAction=a.error?null:a;
+ bxShowPreview(a);$('bxAssistantStatus').textContent=a.error?'Please revise your instruction.':'Check the preview, then confirm to save.';
+};
+$('bxCommand').addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')$('bxInterpret').click()});
 
 const authMsg=document.getElementById('authMessage');
 function setAuthMode(mode){
