@@ -505,9 +505,56 @@ function bxCommitAction(){
  }
  bxPendingAction=null;save();$('bxCommand').value='';$('bxAssistantPreview').style.display='none';$('bxAssistantStatus').textContent='Saved. Business records and dashboard have been updated.';
 }
-$('bxInterpret').onclick=()=>{
- const a=bxInterpretCommand($('bxCommand').value);bxPendingAction=a.error?null:a;
- bxShowPreview(a);$('bxAssistantStatus').textContent=a.error?'Please revise your instruction.':'Check the preview, then confirm to save.';
+async function bxAskAI(instruction){
+ const {data:sessionData}=await sb.auth.getSession();
+ const token=sessionData?.session?.access_token;
+ if(!token)throw new Error('Please sign in again to use the AI assistant.');
+ const {data:result,error}=await sb.functions.invoke('bx-business-assistant',{
+  body:{instruction,currency:currencyCode,country:businessProfile.country_code||''},
+  headers:{Authorization:'Bearer '+token}
+ });
+ if(error)throw new Error(error.message||'AI assistant connection failed.');
+ if(result?.error){const e=new Error(result.error);e.setupRequired=!!result.setup_required;throw e;}
+ return result;
+}
+function bxConvertAIResult(result){
+ if(result.needs_clarification?.length)return {error:'I need a little more information: '+result.needs_clarification.join(' ')};
+ if(!result.actions?.length)return {error:result.summary||'No business record action was identified.'};
+ if(result.actions.length!==1)return {error:'I understood several actions, but this version safely saves one action at a time. Please split the instruction into separate steps.'};
+ const x=result.actions[0];
+ if(x.type==='sale'){
+  const qty=Number(x.quantity||1),unit=Number(x.unit_price||0),total=Number(x.total_amount||qty*unit),paid=Number(x.amount_paid??total),item=String(x.item||'').trim(),customer=String(x.customer||'').trim();
+  if(!item||!qty||!total||paid>total||paid<0)return {error:'The sale details need clarification. Check the item, quantity, price and amount paid.'};
+  const product=data.products.find(p=>String(p.name||'').toLowerCase()===item.toLowerCase());
+  if(product&&Number(product.qty)<qty)return {error:'Not enough '+item+' in stock. Available: '+product.qty+'. No records were changed.'};
+  return {type:'sale',qty,item,unit,total,paid,customer,productId:product?.id||null};
+ }
+ if(x.type==='expense'){
+  const amount=Number(x.amount||x.total_amount||0),description=String(x.description||x.category||'Business expense').trim();
+  if(!amount||amount<0)return {error:'The expense amount needs clarification.'};
+  return {type:'expense',amount,description,category:String(x.category||'Other')};
+ }
+ if(x.type==='stock_in'){
+  const qty=Number(x.quantity||0),item=String(x.item||'').trim();
+  if(!qty||!item)return {error:'The stock item and quantity need clarification.'};
+  const product=data.products.find(p=>String(p.name||'').toLowerCase()===item.toLowerCase());
+  return {type:'stock',qty,item,productId:product?.id||null};
+ }
+ return {error:'I understood this as "'+String(result.summary||x.type)+'", but this action is not enabled for automatic saving yet. No records were changed.'};
+}
+$('bxInterpret').onclick=async()=>{
+ const instruction=$('bxCommand').value.trim();
+ $('bxAssistantStatus').textContent='AI is understanding your instruction…';
+ $('bxInterpret').disabled=true;bxPendingAction=null;
+ try{
+  const result=await bxAskAI(instruction);
+  const a=bxConvertAIResult(result);bxPendingAction=a.error?null:a;bxShowPreview(a);
+  $('bxAssistantStatus').textContent=a.error?'Please review or clarify your instruction.':'AI understood the request. Review the preview before confirming.';
+ }catch(error){
+  const a=bxInterpretCommand(instruction);bxPendingAction=a.error?null:a;bxShowPreview(a);
+  $('bxAssistantStatus').textContent=error.setupRequired?'AI connection needs its server key; showing basic command preview instead.':(a.error?'AI unavailable; please revise your instruction.':'AI unavailable; showing basic command preview. Review before confirming.');
+  if(error.setupRequired)$('bxAssistantStatus').title=error.message;
+ }finally{$('bxInterpret').disabled=false;}
 };
 $('bxCommand').addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')$('bxInterpret').click()});
 
