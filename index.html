@@ -75,6 +75,7 @@
 <script>
 const KEY='bridanx-business-manager-v1', CURRENCY_KEY='bridanx-business-manager-currency';
 let data=JSON.parse(localStorage.getItem(KEY)||'{"transactions":[],"sales":[],"products":[],"customers":[]}');
+data={transactions:Array.isArray(data.transactions)?data.transactions:[],sales:Array.isArray(data.sales)?data.sales:[],products:Array.isArray(data.products)?data.products:[],customers:Array.isArray(data.customers)?data.customers:[]};
 const $=id=>document.getElementById(id);
 const currencies=[
  ['Nigeria','NGN','en-NG'],['Uganda','UGX','en-UG'],['Kenya','KES','en-KE'],['Tanzania','TZS','sw-TZ'],['Rwanda','RWF','rw-RW'],['Ghana','GHS','en-GH'],['South Africa','ZAR','en-ZA'],['Egypt','EGP','ar-EG'],['Zambia','ZMW','en-ZM'],['Malawi','MWK','en-MW'],['Zimbabwe','ZiG','en-ZW'],['Botswana','BWP','en-BW'],['Namibia','NAD','en-NA'],['Ethiopia','ETB','am-ET'],['Morocco','MAD','ar-MA'],['Senegal','XOF','fr-SN'],['Cameroon','XAF','fr-CM'],['United States','USD','en-US'],['United Kingdom','GBP','en-GB'],['Eurozone','EUR','en-IE'],['Canada','CAD','en-CA'],['Australia','AUD','en-AU'],['India','INR','en-IN'],['China','CNY','zh-CN'],['Japan','JPY','ja-JP'],['United Arab Emirates','AED','en-AE'],['Saudi Arabia','SAR','en-SA'],['Brazil','BRL','pt-BR'],['Switzerland','CHF','de-CH']
@@ -161,6 +162,7 @@ document.getElementById('authForm').addEventListener('submit',async e=>{
 document.getElementById('signOutBtn').onclick=async()=>{await sb.auth.signOut();currentUser=null;document.getElementById('appShell').style.display='none';document.getElementById('authGate').style.display='grid';};
 function uid(){return crypto.randomUUID()}
 async function activateUser(user){
+ cloudSyncEnabled=true;
  currentUser=user;document.getElementById('signedInEmail').textContent=user.email||'Account';
  document.getElementById('authGate').style.display='none';document.getElementById('appShell').style.display='grid';
  await loadCloudData();
@@ -178,7 +180,8 @@ async function loadCloudData(){
    sales:sa.map(x=>({id:x.id,item:x.item,customer:x.customer||'',amount:String(x.amount),payment:x.payment_method,date:x.sale_date})),
    products:pr.map(x=>({id:x.id,name:x.name,sku:x.sku||'',qty:String(x.quantity),price:String(x.unit_price)})),
    customers:cu.map(x=>({id:x.id,name:x.name,phone:x.phone||'',email:x.email||'',date:x.created_at?.slice(0,10)||new Date().toISOString().slice(0,10)}))};
-  const local=JSON.parse(localStorage.getItem(KEY)||'{"transactions":[],"sales":[],"products":[],"customers":[]}');
+  const saved=JSON.parse(localStorage.getItem(KEY)||'{}');
+  const local={transactions:Array.isArray(saved.transactions)?saved.transactions:[],sales:Array.isArray(saved.sales)?saved.sales:[],products:Array.isArray(saved.products)?saved.products:[],customers:Array.isArray(saved.customers)?saved.customers:[]};
   const localKey=t=>t==='inventory'?'products':t;
   const remoteKey=t=>t==='inventory'?'products':t;
   const remoteEmpty=names.every(t=>(remote[remoteKey(t)]||[]).length===0);
