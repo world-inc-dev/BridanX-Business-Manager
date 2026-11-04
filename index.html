@@ -520,7 +520,7 @@ body{background:radial-gradient(ellipse at 70% -18%,rgba(44,103,190,.25),transpa
    <div id="bxInsights" aria-live="polite" style="display:none;margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#081b27"></div>
    <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line)">
     <strong>Ask about your business</strong>
-    <p style="margin:4px 0 10px;color:var(--muted);font-size:12px">Ask a question about figures already saved in this workspace.</p>
+    <p style="margin:4px 0 10px;color:var(--muted);font-size:12px">Have a natural conversation with your AI assistant about your business, performance and saved records.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="bxQuestion" type="text" placeholder="Ask or speak to your assistant…" style="flex:1;min-width:210px;background:#081b27;border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--text)"><button class="btn primary" id="bxAskQuestion" type="button">Ask question</button><button class="btn" id="bxVoiceChat" type="button">🎙 Talk</button></div><p id="bxVoiceStatus" aria-live="polite" style="margin:7px 0 0;color:var(--muted);font-size:11px">Use your microphone to ask a question and hear the answer. Microphone permission is required.</p>
     <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:9px" aria-label="Example business questions"><button class="btn" type="button" data-bx-question="How much do customers owe me?">Customer debts</button><button class="btn" type="button" data-bx-question="What is my total income?">Total income</button><button class="btn" type="button" data-bx-question="What are my total expenses?">Total expenses</button><button class="btn" type="button" data-bx-question="What is my net profit?">Net position</button><button class="btn" type="button" data-bx-question="Which product sells the most?">Top-selling item</button><button class="btn" type="button" data-bx-question="Which items should I restock?">Low stock</button></div>
     <div id="bxAnswer" aria-live="polite" style="display:none;margin-top:12px;padding:13px;border:1px solid var(--line);border-radius:11px;background:#0b2230"></div>
@@ -1219,7 +1219,7 @@ function bxAnalyzeBusiness(){
  el.style.display='block';
 }
 document.getElementById('bxAnalyze').onclick=bxAnalyzeBusiness;
-function bxAnswerBusinessQuestion(){
+async function bxAnswerBusinessQuestion(){
  const input=document.getElementById('bxQuestion'),out=document.getElementById('bxAnswer');
  const q=String(input.value||'').trim().toLowerCase();
  if(!q){out.textContent='Type a question first.';out.style.display='block';return;}
@@ -1261,7 +1261,27 @@ function bxAnswerBusinessQuestion(){
  }else{
   answer='I can answer questions about customer debts, highest sales month, total income, total expenses, net position, top-selling products, low stock, customer count, and inventory value. Try one of those questions.';
  }
- out.textContent=answer;out.style.display='block';
+ out.textContent='I’m reviewing your business records and preparing an answer…';out.style.display='block';
+ const askButton=document.getElementById('bxAskQuestion');askButton.disabled=true;
+ try{
+  const {data:sessionData}=await sb.auth.getSession(),token=sessionData?.session?.access_token;
+  if(token){
+   const compact={
+    transactions:tx.slice(-60).map(x=>({description:x.description,type:x.type,category:x.category,amount:Number(x.amount||0),date:x.date})),
+    sales:sales.slice(-60).map(x=>({item:x.item,customer:x.customer,quantity:Number(x.quantity||1),amount:Number(x.amount||0),date:x.date,payment:x.payment})),
+    products:products.slice(0,100).map(x=>({name:x.name,sku:x.sku,quantity:Number(x.qty||0),selling_price:Number(x.price||0),unit_cost:Number(x.cost||0),reorder_level:Number(x.reorder_level??x.min_stock??0)})),
+    debts:debts.slice(0,100).map(x=>({customer:x.customer_name,description:x.description,total:Number(x.total_amount||0),paid:Number(x.amount_paid||0),due_date:x.due_date})),
+    customers:(data.customers||[]).slice(0,100).map(x=>({name:x.name,phone:x.phone})),
+    totals:{recorded_income:income.reduce((n,x)=>n+Number(x.amount||0),0),recorded_expenses:expenses.reduce((n,x)=>n+Number(x.amount||0),0),outstanding_customer_debt:outstanding}
+   };
+   const {data:aiResult,error}=await sb.functions.invoke('bx-business-assistant',{body:{mode:'chat',question:input.value.trim(),context:compact,currency:currencyCode,country:businessProfile.country_code||''},headers:{Authorization:'Bearer '+token}});
+   if(error)throw new Error(error.message||'AI assistant connection failed.');
+   if(aiResult?.error)throw new Error(aiResult.error);
+   if(aiResult?.answer){out.textContent=aiResult.answer;return;}
+  }
+ }catch(error){console.warn('Conversational AI unavailable; using the local business answer:',error.message);}
+ finally{askButton.disabled=false;}
+ out.textContent=answer;
 }
 document.getElementById('bxAskQuestion').onclick=bxAnswerBusinessQuestion;
 document.querySelectorAll('[data-bx-question]').forEach(button=>button.addEventListener('click',()=>{const input=document.getElementById('bxQuestion');input.value=button.dataset.bxQuestion;bxAnswerBusinessQuestion();}));
@@ -1286,8 +1306,8 @@ function bxStartVoice(mode){
   const transcript=String(event.results?.[0]?.[0]?.transcript||'').trim();
   if(!transcript){bxSetVoiceStatus('I did not catch that. Please try again.');return;}
   if(mode==='question'){
-   document.getElementById('bxQuestion').value=transcript;bxAnswerBusinessQuestion();
-   const answer=document.getElementById('bxAnswer').textContent;bxSetVoiceStatus('You said: '+transcript+' — Speaking the answer.');bxSpeak(answer);
+   document.getElementById('bxQuestion').value=transcript;bxSetVoiceStatus('You said: '+transcript+' — Preparing your answer…');
+   bxAnswerBusinessQuestion().then(()=>{const answer=document.getElementById('bxAnswer').textContent;bxSetVoiceStatus('Here is your answer.');bxSpeak(answer);});
   }else{
    document.getElementById('bxCommand').value=transcript;
    document.getElementById('bxAssistantStatus').textContent='Voice instruction captured. Preparing a review preview…';
