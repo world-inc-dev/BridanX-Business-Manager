@@ -110,6 +110,31 @@ th{background:#0a1d2b}
  #settings>.card{padding:16px}
 }
 </style>
+
+<style>
+/* Mobile navigation refinement */
+.nav-scrim{display:none}
+.sidebar-close{display:none}
+.mobile-menu{width:42px;height:42px;align-items:center;justify-content:center;padding:0;font-size:19px;border-radius:13px;flex:none}
+@media(max-width:900px){
+ .sidebar{padding:20px 16px calc(22px + env(safe-area-inset-bottom));gap:22px;overflow-y:auto;overscroll-behavior:contain}
+ .sidebar.open{box-shadow:18px 0 55px rgba(0,0,0,.48)}
+ .brand{min-height:48px}
+ .sidebar-close{display:grid;place-items:center;margin-left:auto;width:36px;height:36px;border:1px solid #294958;border-radius:11px;background:#102b39;color:#b9d2d8;font-size:23px;line-height:1}
+ .nav{gap:6px}
+ .nav button{min-height:45px;padding:11px 13px;font-size:13px}
+ .nav-scrim{display:block;position:fixed;inset:0;z-index:3;border:0;background:rgba(1,8,14,.68);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s,visibility .2s}
+ .nav-scrim.visible{opacity:1;visibility:visible;pointer-events:auto}
+ .sidebar{z-index:5}
+ .mobile-menu{min-width:42px;box-shadow:0 5px 16px #0002}
+ body.nav-open{overflow:hidden}
+}
+@media(max-width:520px){
+ .topbar>div:first-child{gap:9px!important}
+ .topbar h1{font-size:23px}
+ .mobile-menu{width:40px;height:40px}
+}
+</style>
 </head>
 <body>
 
@@ -136,8 +161,8 @@ th{background:#0a1d2b}
  </div>
 </div>
 <div class="shell" id="appShell" style="display:none">
-<aside class="sidebar" id="sidebar">
- <div class="brand"><div class="logo">BX</div><div><strong>BridanX</strong><small>BUSINESS MANAGER</small></div></div>
+<aside class="sidebar" id="sidebar" aria-label="Main navigation">
+ <div class="brand"><div class="logo">BX</div><div><strong>BridanX</strong><small>BUSINESS MANAGER</small></div><button class="sidebar-close" id="sidebarClose" type="button" aria-label="Close navigation">×</button></div>
  <div><div class="nav-label">WORKSPACE</div><nav class="nav" id="nav">
  <button class="active" data-view="overview"><span class="ico">◫</span>Overview</button>
  <button data-view="transactions"><span class="ico">⇄</span>Transactions</button>
@@ -149,8 +174,9 @@ th{background:#0a1d2b}
  </nav></div>
  <div class="side-bottom"><b>BridanX Digital Business Hub</b>One clear view of your business. Your records are saved in this browser on this device.</div>
 </aside>
+<button class="nav-scrim" id="navScrim" type="button" aria-label="Close navigation"></button>
 <main class="main">
- <header class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="btn mobile-menu" id="menuBtn">☰</button><div><div class="eyebrow">BUSINESS WORKSPACE</div><h1 id="pageTitle">Overview</h1></div></div><div class="top-actions"><div id="accountBar"><span class="auth-business-name" id="signedInBusinessName">My Business</span><button class="btn" id="signOutBtn" type="button">Sign out</button></div><select id="currencySelect" aria-label="Display currency" class="date-pill" style="max-width:170px;background:#0c202d;color:var(--text);border:1px solid var(--line)"></select><div class="date-pill" id="today"></div><img class="profile-mark" src="assets/bridanx-mark.svg" alt="BridanX"></div></header>
+ <header class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="btn mobile-menu" id="menuBtn" type="button" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false"><span aria-hidden="true">☰</span></button><div><div class="eyebrow">BUSINESS WORKSPACE</div><h1 id="pageTitle">Overview</h1></div></div><div class="top-actions"><div id="accountBar"><span class="auth-business-name" id="signedInBusinessName">My Business</span><button class="btn" id="signOutBtn" type="button">Sign out</button></div><select id="currencySelect" aria-label="Display currency" class="date-pill" style="max-width:170px;background:#0c202d;color:var(--text);border:1px solid var(--line)"></select><div class="date-pill" id="today"></div><img class="profile-mark" src="assets/bridanx-mark.svg" alt="BridanX"></div></header>
  <section class="view active" id="overview">
   <section class="dashboard-hero">
    <div class="hero-copy"><span class="hero-kicker"><i></i> YOUR BUSINESS, IN FOCUS</span><h2>Good business starts with <em>clear numbers.</em></h2><p>Track performance, stay organised and make confident decisions from one workspace.</p>
@@ -381,9 +407,19 @@ document.addEventListener('DOMContentLoaded',function(){var heroButton=document.
 </script>
 </body></html>';win.document.open();win.document.write(html);win.document.close()};
 let currentPlan='Free';
-$('nav').onclick=e=>{const b=e.target.closest('button[data-view]');if(!b)return;const rules={inventory:currentPlan==='Starter'||currentPlan==='Professional',debts:currentPlan==='Starter'||currentPlan==='Professional',accounting:currentPlan==='Professional',payroll:currentPlan==='Professional',suppliers:currentPlan==='Professional'};if(Object.prototype.hasOwnProperty.call(rules,b.dataset.view)&&!rules[b.dataset.view]){alert('This feature is included in a paid BridanX plan. Please upgrade from Plans & subscription.');document.querySelector('#nav [data-view="plans"]')?.click();return;}document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===b.dataset.view));$('pageTitle').textContent=b.textContent.trim();$('sidebar').classList.remove('open')};
+$('nav').onclick=e=>{const b=e.target.closest('button[data-view]');if(!b)return;const rules={inventory:currentPlan==='Starter'||currentPlan==='Professional',debts:currentPlan==='Starter'||currentPlan==='Professional',accounting:currentPlan==='Professional',payroll:currentPlan==='Professional',suppliers:currentPlan==='Professional'};if(Object.prototype.hasOwnProperty.call(rules,b.dataset.view)&&!rules[b.dataset.view]){alert('This feature is included in a paid BridanX plan. Please upgrade from Plans & subscription.');document.querySelector('#nav [data-view="plans"]')?.click();return;}document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===b.dataset.view));$('pageTitle').textContent=b.textContent.trim();setMobileNav(false)};
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>document.querySelector('[data-view="'+b.dataset.go+'"]').click());
-$('menuBtn').onclick=()=>$('sidebar').classList.toggle('open');
+function setMobileNav(open){
+ $('sidebar').classList.toggle('open',open);
+ $('navScrim').classList.toggle('visible',open);
+ document.body.classList.toggle('nav-open',open);
+ $('menuBtn').setAttribute('aria-expanded',String(open));
+ $('menuBtn').setAttribute('aria-label',open?'Close navigation':'Open navigation');
+}
+$('menuBtn').onclick=()=>setMobileNav(!$('sidebar').classList.contains('open'));
+$('sidebarClose').onclick=()=>setMobileNav(false);
+$('navScrim').onclick=()=>setMobileNav(false);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')setMobileNav(false)});
 const subscriptionPrices={UGX:{Starter:{monthly:20000,annual:200000},Professional:{monthly:50000,annual:500000}},NGN:{Starter:{monthly:6500,annual:65000},Professional:{monthly:16000,annual:160000}}};
 let currentSubscription=null,isPlatformOwner=false;
 async function loadMySubscription(){if(!currentUser)return;let data=null,error=null;try{const result=await sb.from('subscriptions').select('*').eq('user_id',currentUser.id).maybeSingle();data=result.data;error=result.error;}catch(e){error=e;}if(error){console.warn('Subscription lookup:',error.message||error);currentSubscription=null;applyPlanVisibility('Free');const failed=$('mySubscriptionStatus')||document.createElement('div');failed.id='mySubscriptionStatus';failed.className='notice';failed.textContent='Subscription could not be verified. Paid features are locked until your plan is confirmed.';if(!failed.parentNode){const plans=$('plans');plans.insertBefore(failed,plans.children[1]||null);}return;}currentSubscription=data||null;const validExpiry=!!data?.expires_at&&Number.isFinite(new Date(data.expires_at).getTime())&&new Date(data.expires_at).getTime()>Date.now();const active=!!data&&data.status==='active'&&validExpiry&&['Starter','Professional'].includes(data.plan);const plan=active?data.plan:'Free';const box=$('mySubscriptionStatus')||document.createElement('div');box.id='mySubscriptionStatus';box.className='notice';box.textContent=active?'Your current plan: '+plan+' · Expires '+new Date(data.expires_at).toLocaleDateString():'Your current plan: Free'+(data&&data.expires_at?' · Previous plan expired':'');if(!box.parentNode){const plans=$('plans');plans.insertBefore(box,plans.children[1]||null);}applyPlanVisibility(plan);}
