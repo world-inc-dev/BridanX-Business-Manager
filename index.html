@@ -19,6 +19,21 @@ body{background:radial-gradient(ellipse at 78% -18%,rgba(24,112,119,.24),transpa
 .brand strong{font-size:15px;letter-spacing:.35px;font-weight:850}
 .brand small{display:block;margin-top:2px;letter-spacing:1.55px;font-size:9px;font-weight:800;color:#75a3ad}
 .brand-mark{width:46px;height:46px;display:block;flex:none;filter:drop-shadow(0 8px 16px #16cbb333)}
+.sidebar-brand-mark{width:46px;height:46px;animation:bxLogoSpin 12s linear infinite;transform-origin:50% 50%}
+.profile-mark{animation:bxLogoSpin 14s linear infinite;transform-origin:50% 50%}
+.welcome-brand .brand-mark{animation:bxLogoSpin 12s linear infinite;transform-origin:50% 50%}
+@keyframes bxLogoSpin{to{transform:rotate(360deg)}}
+.welcome-brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.welcome-live,.live-status{display:inline-flex;align-items:center;gap:7px;color:#75eadb;font-size:9px;font-weight:900;letter-spacing:1.3px;border:1px solid #245a5b;background:#0d2b35;padding:7px 10px;border-radius:30px}
+.welcome-live i,.live-status i{width:7px;height:7px;border-radius:50%;background:#49e4a7;box-shadow:0 0 0 4px #49e4a722;animation:bxPulse 1.6s ease-in-out infinite}
+@keyframes bxPulse{50%{opacity:.4;box-shadow:0 0 0 7px #49e4a70a}}
+.live-timebox{display:grid;gap:1px;min-width:108px;padding:7px 10px;border:1px solid #24505c;background:#0b2230;border-radius:12px;text-align:right}
+.live-timebox strong{font-size:14px;line-height:1.2;font-variant-numeric:tabular-nums;letter-spacing:.5px;color:#e8fffc}
+.live-timebox small{font-size:9px;color:#91aeb8;white-space:nowrap}
+.live-status{padding:0;border:0;background:transparent;justify-self:end;font-size:8px}
+#activityLiveMeta{color:#67ddcc;font-size:10px;font-variant-numeric:tabular-nums}
+@media(max-width:700px){.live-timebox{min-width:88px;padding:6px 8px}.live-timebox strong{font-size:12px}.live-timebox small{font-size:8px}.top-actions{gap:6px}.welcome-live{margin-left:2px}}
+@media(prefers-reduced-motion:reduce){.sidebar-brand-mark,.profile-mark,.welcome-brand .brand-mark,.welcome-live i,.live-status i{animation:none}}
 .auth-card .brand-mark{width:54px;height:54px}
 .nav button{padding:11px 13px;border:1px solid transparent;transition:background .18s,border-color .18s,color .18s}
 .nav button.active{background:linear-gradient(100deg,#123b45,#102b39);border-color:#20515a;color:#70eadb;box-shadow:inset 3px 0 #36d9c5}
@@ -396,7 +411,7 @@ body{background:radial-gradient(ellipse at 70% -18%,rgba(44,103,190,.25),transpa
 <div id="authGate" class="welcome-gate">
  <div class="welcome-layout">
   <section class="welcome-intro">
-   <div class="welcome-brand"><img class="brand-mark" src="assets/bridanx-mark.svg" alt="BridanX logo"><div><strong>BridanX</strong><small>BUSINESS MANAGER</small></div></div>
+   <div class="welcome-brand"><img class="brand-mark" src="assets/bridanx-mark.svg" alt="BridanX logo"><div><strong>BridanX</strong><small>BUSINESS MANAGER</small></div><span class="welcome-live"><i></i> PLATFORM LIVE</span></div>
    <div class="welcome-copy">
     <span class="welcome-kicker"><i></i> YOUR BUSINESS. ONE CLEAR VIEW.</span>
     <h1>Run your business with <em>clarity and confidence.</em></h1>
@@ -458,7 +473,7 @@ body{background:radial-gradient(ellipse at 70% -18%,rgba(44,103,190,.25),transpa
 </div>
 <div class="shell" id="appShell" style="display:none">
 <aside class="sidebar" id="sidebar" aria-label="Main navigation">
- <div class="brand"><div class="logo">BX</div><div><strong>BridanX</strong><small>BUSINESS MANAGER</small></div><button class="sidebar-close" id="sidebarClose" type="button" aria-label="Close navigation">×</button></div>
+ <div class="brand"><img class="brand-mark sidebar-brand-mark" src="assets/bridanx-mark.svg" alt="BridanX"><div><strong>BridanX</strong><small>BUSINESS MANAGER</small></div><button class="sidebar-close" id="sidebarClose" type="button" aria-label="Close navigation">×</button></div>
  <div><div class="nav-label">WORKSPACE</div><nav class="nav" id="nav">
  <button class="active" data-view="overview"><span class="ico">◫</span>Overview</button>
  <button data-view="transactions"><span class="ico">⇄</span>Transactions</button>
@@ -472,7 +487,7 @@ body{background:radial-gradient(ellipse at 70% -18%,rgba(44,103,190,.25),transpa
 </aside>
 <button class="nav-scrim" id="navScrim" type="button" aria-label="Close navigation"></button>
 <main class="main">
- <header class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="btn mobile-menu" id="menuBtn" type="button" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false"><span aria-hidden="true">☰</span></button><div><div class="eyebrow">BRIDANX BUSINESS MANAGER</div><h1 id="pageTitle">Overview</h1></div></div><div class="top-actions"><div id="accountBar"><span class="account-label">SIGNED IN AS</span><span class="auth-business-name" id="signedInBusinessName">My Business</span><button class="btn sign-out-btn" id="signOutBtn" type="button"><span aria-hidden="true">↪</span> Sign out</button></div><select id="currencySelect" aria-label="Display currency" class="date-pill" style="max-width:170px;background:#0c202d;color:var(--text);border:1px solid var(--line)"></select><div class="date-pill" id="today"></div><img class="profile-mark" src="assets/bridanx-mark.svg" alt="BridanX"></div></header>
+ <header class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="btn mobile-menu" id="menuBtn" type="button" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false"><span aria-hidden="true">☰</span></button><div><div class="eyebrow">BRIDANX BUSINESS MANAGER</div><h1 id="pageTitle">Overview</h1></div></div><div class="top-actions"><div id="accountBar"><span class="account-label">SIGNED IN AS</span><span class="auth-business-name" id="signedInBusinessName">My Business</span><button class="btn sign-out-btn" id="signOutBtn" type="button"><span aria-hidden="true">↪</span> Sign out</button></div><select id="currencySelect" aria-label="Display currency" class="date-pill" style="max-width:170px;background:#0c202d;color:var(--text);border:1px solid var(--line)"></select><div class="live-timebox"><span class="live-status"><i></i> LIVE</span><strong id="liveClock">--:--:--</strong><small id="liveDate">Loading local time…</small></div><div class="date-pill" id="today"></div><img class="profile-mark" src="assets/bridanx-mark.svg" alt="BridanX"></div></header>
  <section class="view active" id="overview">
   <div class="overview-heading">
    <div><div class="eyebrow">PERFORMANCE SNAPSHOT</div><h2>Your business at a glance</h2><p>A clear view of your finances, customers, and business activity, based on your saved records.</p></div>
@@ -491,7 +506,7 @@ body{background:radial-gradient(ellipse at 70% -18%,rgba(44,103,190,.25),transpa
   <div class="grid overview-bottom">
    <article class="card"><div class="section-head"><div><h2>Top-selling products</h2><p>Ranked by recorded sales value</p></div><button class="btn" data-go="sales" type="button">View sales</button></div><div id="topProducts" class="metric-list"><div class="empty">No sales recorded yet.</div></div></article>
    <article class="card"><div class="section-head"><div><h2>Business attention</h2><p>Stock and customer balances to review</p></div><button class="btn" data-go="inventory" type="button">Manage</button></div><div id="overviewAttention" class="attention-list"><div class="empty">No alerts at the moment.</div></div></article>
-   <article class="card"><div class="section-head"><div><h2>Recent activity</h2><p>Your latest recorded transactions</p></div><button class="btn" data-go="transactions" type="button">View all</button></div><div class="activity" id="activity"></div></article>
+   <article class="card"><div class="section-head"><div><h2>Live business activity</h2><p>Updates from your saved business records · <span id="activityLiveMeta">Waiting for activity…</span></p></div><button class="btn" data-go="transactions" type="button">View all</button></div><div class="activity" id="activity"></div></article>
   </div>
   <div class="section-head overview-table-head"><div><h2>Recent transactions</h2><p>A quick look at your latest business records</p></div><button class="btn primary" id="overviewAddTransaction" type="button">＋ Add transaction</button></div>
   <div class="card table-card"><div class="table-wrap"><table><thead><tr><th>Description</th><th>Category</th><th>Type</th><th>Date</th><th>Amount</th><th>Actions</th></tr></thead><tbody id="recentRows"></tbody></table></div></div>
@@ -818,7 +833,37 @@ document.addEventListener('click',e=>{const edit=e.target.closest('[data-edit]')
 
 $('transactionSearch').oninput=render;
 $('exportCsv').onclick=()=>{const rows=[['Description','Category','Type','Date','Amount'],...data.transactions.map(x=>[x.description,x.category,x.type,x.date,x.amount])];const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='bridanx-transactions.csv';a.click();URL.revokeObjectURL(a.href)};
-$('exportPdf').onclick=()=>{const win=window.open('','_blank');if(!win){alert('Please allow pop-ups to create your report.');return}const income=data.transactions.filter(x=>x.type==='Income').reduce((a,x)=>a+Number(x.amount||0),0),expenses=data.transactions.filter(x=>x.type==='Expense').reduce((a,x)=>a+Number(x.amount||0),0);const makeTable=(headers,rows)=>'<table><thead><tr>'+headers.map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr></thead><tbody>'+(rows.length?rows.map(r=>'<tr>'+r.map(x=>'<td>'+esc(x)+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+headers.length+'">No records available</td></tr>')+'</tbody></table>';const report='<!doctype html><html><head><meta charset="utf-8"><title>Business report</title><style>body{font:13px Arial,sans-serif;color:#172b36;margin:30px}h1,h2{color:#087f82}table{width:100%;border-collapse:collapse;margin:12px 0 24px}th,td{text-align:left;border-bottom:1px solid #dce5e8;padding:8px;font-size:11px}th{background:#edf4f5}.metric{display:inline-block;margin:8px 18px 8px 0}</style></head><body><h1>'+esc(businessProfile.business_name||'BridanX Business Manager')+'</h1><p>Business performance report · Generated '+esc(new Date().toLocaleString())+'</p><div class="metric">Total income: <b>'+money(income)+'</b></div><div class="metric">Total expenses: <b>'+money(expenses)+'</b></div><div class="metric">Net result: <b>'+money(income-expenses)+'</b></div><h2>Transactions</h2>'+makeTable(['Description','Category','Type','Date','Amount'],data.transactions.map(x=>[x.description,x.category,x.type,x.date,money(x.amount)]))+'<h2>Sales</h2>'+makeTable(['Item','Customer','Date','Payment','Amount'],data.sales.map(x=>[x.item,x.customer||'—',x.date,x.payment,money(x.amount)]))+'<h2>Inventory</h2>'+makeTable(['Product','SKU','Quantity','Unit price'],data.products.map(x=>[x.name,x.sku||'—',x.qty,money(x.price)]))+'</body></html>';win.document.open();win.document.write(report);win.document.close();win.onload=()=>setTimeout(()=>win.print(),350)};
+$('exportPdf').onclick=()=>{const win=window.open('','_blank');if(!win){alert('Please allow pop-ups to create your report.');return}const income=data.transactions.filter(x=>x.type==='Income').reduce((a,x)=>a+Number(x.amount||0),0),expenses=data.transactions.filter(x=>x.type==='Expense').reduce((a,x)=>a+Number(x.amount||0),0);const makeTable=(headers,rows)=>'<table><thead><tr>'+headers.map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr></thead><tbody>'+(rows.length?rows.map(r=>'<tr>'+r.map(x=>'<td>'+esc(x)+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+headers.length+'">No records available</td></tr>')+'</tbody></table>';const report='<!doctype html><html><head><meta charset="utf-8"><title>Business report</title><style>body{font:13px Arial,sans-serif;color:#172b36;margin:30px}h1,h2{color:#087f82}table{width:100%;border-collapse:collapse;margin:12px 0 24px}th,td{text-align:left;border-bottom:1px solid #dce5e8;padding:8px;font-size:11px}th{background:#edf4f5}.metric{display:inline-block;margin:8px 18px 8px 0}</style></head><body><h1>'+esc(businessProfile.business_name||'BridanX Business Manager')+'</h1><p>Business performance report · Generated '+esc(new Date().toLocaleString())+'</p><div class="metric">Total income: <b>'+money(income)+'</b></div><div class="metric">Total expenses: <b>'+money(expenses)+'</b></div><div class="metric">Net result: <b>'+money(income-expenses)+'</b></div><h2>Transactions</h2>'+makeTable(['Description','Category','Type','Date','Amount'],data.transactions.map(x=>[x.description,x.category,x.type,x.date,money(x.amount)]))+'<h2>Sales</h2>'+makeTable(['Item','Customer','Date','Payment','Amount'],data.sales.map(x=>[x.item,x.customer||'—',x.date,x.payment,money(x.amount)]))+'<h2>Inventory</h2>'+makeTable(['Product','SKU','Quantity','Unit price'],data.products.map(x=>[x.name,x.sku||'—',x.qty,money(x.price)]))+'
+<script>
+/* Live platform presence: device-local clock and honest activity refresh status. */
+(function(){
+  const zone='Africa/Kampala';
+  const timeOptions={timeZone:zone,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true};
+  const dateOptions={timeZone:zone,weekday:'short',year:'numeric',month:'short',day:'numeric'};
+  function updatePlatformClock(){
+    const now=new Date();
+    const time=new Intl.DateTimeFormat('en-US',timeOptions).format(now);
+    const date=new Intl.DateTimeFormat('en-US',dateOptions).format(now);
+    ['liveClock'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=time;});
+    ['liveDate'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=date+' · EAT';});
+    const today=document.getElementById('today');
+    if(today)today.textContent=new Intl.DateTimeFormat('en-US',{timeZone:zone,month:'short',day:'numeric',year:'numeric'}).format(now);
+  }
+  updatePlatformClock();
+  window.setInterval(updatePlatformClock,1000);
+  const activity=document.getElementById('activity');
+  const meta=document.getElementById('activityLiveMeta');
+  if(activity&&meta){
+    const observer=new MutationObserver(()=>{
+      meta.textContent='Refreshed '+new Intl.DateTimeFormat('en-US',{timeZone:zone,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}).format(new Date())+' EAT';
+    });
+    observer.observe(activity,{childList:true,subtree:true,characterData:true});
+    meta.textContent='Ready · waiting for your saved records';
+  }
+})();
+</script>
+
+</body></html>';win.document.open();win.document.write(report);win.document.close();win.onload=()=>setTimeout(()=>win.print(),350)};
 
 
 const defaultAccounts=[
