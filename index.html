@@ -399,6 +399,10 @@ render();
 const SB_URL='https://yuzzpyellyqicyezjvka.supabase.co';
 const SB_KEY='sb_publishable_xg0I3fVNZCuBLIqnBw-0YA_6yL9QbGC';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
+// Base storage names are scoped to each signed-in account after authentication.
+const BASE_KEY='bx_business_data';
+const BASE_CURRENCY_KEY='bx_currency';
+let KEY=BASE_KEY, CURRENCY_KEY=BASE_CURRENCY_KEY;
 let authMode='login', currentUser=null, cloudBusy=false, cloudSyncEnabled=true, activationPromise=null;
 
 let accounting={accounts:[],entries:[],lines:[],documents:[]}, accountingRange={from:'',to:''};
