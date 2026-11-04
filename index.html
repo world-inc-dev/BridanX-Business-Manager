@@ -136,7 +136,10 @@
 </section></main></div>
 <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitle">Add record</h3><button class="close" id="closeModal">×</button></div><form id="recordForm"></form></div></div>
 <script>
-const KEY='bridanx-business-manager-v1', CURRENCY_KEY='bridanx-business-manager-currency';
+const BASE_KEY='bridanx-business-manager-v1', BASE_CURRENCY_KEY='bridanx-business-manager-currency';
+let KEY=BASE_KEY, CURRENCY_KEY=BASE_CURRENCY_KEY;
+function emptyBusinessData(){return {transactions:[],sales:[],products:[],customers:[],debts:[]};}
+function normalizeBusinessData(value){return {transactions:Array.isArray(value?.transactions)?value.transactions:[],sales:Array.isArray(value?.sales)?value.sales:[],products:Array.isArray(value?.products)?value.products:[],customers:Array.isArray(value?.customers)?value.customers:[],debts:Array.isArray(value?.debts)?value.debts:[]};}
 let data=JSON.parse(localStorage.getItem(KEY)||'{"transactions":[],"sales":[],"products":[],"customers":[]}');
 data={transactions:Array.isArray(data.transactions)?data.transactions:[],sales:Array.isArray(data.sales)?data.sales:[],products:Array.isArray(data.products)?data.products:[],customers:Array.isArray(data.customers)?data.customers:[],debts:Array.isArray(data.debts)?data.debts:[]};
 const $=id=>document.getElementById(id);
@@ -710,12 +713,15 @@ document.getElementById('authForm').addEventListener('submit',async e=>{
  if(result.error){authMsg.textContent=result.error.message;return;}
  await activateUser(result.data.user);
 });
-document.getElementById('signOutBtn').onclick=async()=>{await sb.auth.signOut();currentUser=null;document.getElementById('appShell').style.display='none';document.getElementById('authGate').style.display='grid';};
+document.getElementById('signOutBtn').onclick=async()=>{await sb.auth.signOut();currentUser=null;isPlatformOwner=false;cloudSyncEnabled=true;data=emptyBusinessData();render();document.getElementById('appShell').style.display='none';document.getElementById('authGate').style.display='grid';};
 function uid(){return crypto.randomUUID()}
 async function activateUser(user){
  if(activationPromise){await activationPromise;return;}
  activationPromise=(async()=>{
   cloudSyncEnabled=true;
+  // Keep browser-side records strictly separated by authenticated account.
+  KEY=BASE_KEY+':'+user.id;CURRENCY_KEY=BASE_CURRENCY_KEY+':'+user.id;
+  try{data=normalizeBusinessData(JSON.parse(localStorage.getItem(KEY)||'null'));}catch(_){data=emptyBusinessData();}
   currentUser=user;document.getElementById('signedInEmail').textContent=user.email||'Account';
   document.getElementById('authGate').style.display='none';document.getElementById('appShell').style.display='grid';
   await loadCloudData();
