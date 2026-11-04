@@ -833,7 +833,6 @@ $('transactionSearch').oninput=render;
 $('exportCsv').onclick=()=>{const rows=[['Description','Category','Type','Date','Amount'],...data.transactions.map(x=>[x.description,x.category,x.type,x.date,x.amount])];const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='bridanx-transactions.csv';a.click();URL.revokeObjectURL(a.href)};
 $('exportPdf').onclick=()=>{const win=window.open('','_blank');if(!win){alert('Please allow pop-ups to create your report.');return}const income=data.transactions.filter(x=>x.type==='Income').reduce((a,x)=>a+Number(x.amount||0),0),expenses=data.transactions.filter(x=>x.type==='Expense').reduce((a,x)=>a+Number(x.amount||0),0);const makeTable=(headers,rows)=>'<table><thead><tr>'+headers.map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr></thead><tbody>'+(rows.length?rows.map(r=>'<tr>'+r.map(x=>'<td>'+esc(x)+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+headers.length+'">No records available</td></tr>')+'</tbody></table>';const report='<!doctype html><html><head><meta charset="utf-8"><title>Business report</title><style>body{font:13px Arial,sans-serif;color:#172b36;margin:30px}h1,h2{color:#087f82}table{width:100%;border-collapse:collapse;margin:12px 0 24px}th,td{text-align:left;border-bottom:1px solid #dce5e8;padding:8px;font-size:11px}th{background:#edf4f5}.metric{display:inline-block;margin:8px 18px 8px 0}</style></head><body><h1>'+esc(businessProfile.business_name||'BridanX Business Manager')+'</h1><p>Business performance report · Generated '+esc(new Date().toLocaleString())+'</p><div class="metric">Total income: <b>'+money(income)+'</b></div><div class="metric">Total expenses: <b>'+money(expenses)+'</b></div><div class="metric">Net result: <b>'+money(income-expenses)+'</b></div><h2>Transactions</h2>'+makeTable(['Description','Category','Type','Date','Amount'],data.transactions.map(x=>[x.description,x.category,x.type,x.date,money(x.amount)]))+'<h2>Sales</h2>'+makeTable(['Item','Customer','Date','Payment','Amount'],data.sales.map(x=>[x.item,x.customer||'—',x.date,x.payment,money(x.amount)]))+'<h2>Inventory</h2>'+makeTable(['Product','SKU','Quantity','Unit price'],data.products.map(x=>[x.name,x.sku||'—',x.qty,money(x.price)]))+'</body></html>';win.document.open();win.document.write(report);win.document.close();win.onload=()=>setTimeout(()=>win.print(),350)};
 
-<script>
 /* Live platform presence: device-local clock and honest activity refresh status. */
 (function(){
   const zone='Africa/Kampala';
@@ -860,7 +859,6 @@ $('exportPdf').onclick=()=>{const win=window.open('','_blank');if(!win){alert('P
     meta.textContent='Ready · waiting for your saved records';
   }
 })();
-<\/script>
 
 const defaultAccounts=[
  ['1000','Cash on hand','Asset'],['1010','Bank account','Asset'],['1100','Accounts receivable','Asset'],['1200','Inventory asset','Asset'],['1500','Equipment','Asset'],
