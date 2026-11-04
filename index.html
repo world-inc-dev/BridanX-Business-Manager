@@ -1114,8 +1114,8 @@ document.getElementById('categoryOperationsPanel')?.addEventListener('click',e=>
 function workDetailSummary(x){
  const d=x.details||{};
  if(x.business_type==='school')return 'Class: '+(d.class_name||'—')+' · Term: '+(d.academic_term||'—')+' · Paid: '+money(d.fees_paid||0)+' · Balance: '+money(Math.max(0,Number(x.amount||0)-Number(d.fees_paid||0)));
- if(x.business_type==='salon')return 'Time: '+(d.appointment_time||'—')+' · Stylist: '+(d.stylist||'—')+' · Duration: '+(d.duration_minutes||'—')+' min';
- if(x.business_type==='transport')return (d.origin||'—')+' → '+(d.destination||'—')+' · Driver: '+(d.driver||'—')+' · Vehicle: '+(d.vehicle||'—');
+ if(x.business_type==='salon')return [d.service_category,d.appointment_status,'Time: '+(d.appointment_time||'—'),'Stylist: '+(d.stylist||'—'),d.chair?'Chair: '+d.chair:'','Duration: '+(d.duration_minutes||'—')+' min'].filter(Boolean).join(' · ');
+ if(x.business_type==='transport')return [d.trip_type,(d.origin||'—')+' → '+(d.destination||'—'),'Driver: '+(d.driver||'—'),'Vehicle: '+(d.vehicle||'—'),d.distance_km?'Distance: '+d.distance_km+' km':'',d.fuel_litres?'Fuel: '+d.fuel_litres+' L':'',d.odometer?'Odometer: '+d.odometer:''].filter(Boolean).join(' · ');
  const extraFields=categoryWorkFields[x.business_type]||[];if(extraFields.length)return extraFields.map(f=>{const v=d[f.name];return v!==undefined&&v!==null&&String(v)!==''?f.label+': '+v:''}).filter(Boolean).join(' · ');
  return d.notes||'';
 }
@@ -1150,11 +1150,11 @@ function openWorkItem(existing={}){
   special=field('Admission number','admission_number','text',false)+field('Class / year','class_name','text',true)+field('Academic term','academic_term','text',false)+field('Total fees ('+currencyCode+')','amount','number',false,'min="0" step="0.01" value="0"')+field('Fees paid ('+currencyCode+')','fees_paid','number',false,'min="0" step="0.01" value="0"');
   extraInitial={admission_number:d.admission_number||'',class_name:d.class_name||'',academic_term:d.academic_term||'',fees_paid:d.fees_paid??'0'};
  }else if(businessType==='salon'){
-  special=field('Appointment time','appointment_time','time',false)+field('Stylist / staff member','stylist','text',false)+field('Service duration (minutes)','duration_minutes','number',false,'min="5" step="5"');
-  extraInitial={appointment_time:d.appointment_time||'',stylist:d.stylist||'',duration_minutes:d.duration_minutes||'30'};
+  special=select('Service category','service_category',['Haircut','Hair styling','Braiding','Nails','Makeup','Skincare','Massage','Barbering','Other'])+field('Appointment time','appointment_time','time',false)+field('Stylist / staff member','stylist','text',false)+field('Chair / station','chair','text',false)+field('Service duration (minutes)','duration_minutes','number',false,'min="5" step="5"')+select('Appointment status','appointment_status',['Booked','Confirmed','Arrived','In service','Completed','No-show','Cancelled']);
+  extraInitial={service_category:d.service_category||'Haircut',appointment_time:d.appointment_time||'',stylist:d.stylist||'',chair:d.chair||'',duration_minutes:d.duration_minutes||'30',appointment_status:d.appointment_status||'Booked'};
  }else if(businessType==='transport'){
-  special=field('Pickup / origin','origin','text',true)+field('Destination','destination','text',true)+field('Driver','driver','text',false)+field('Vehicle / registration','vehicle','text',false)+field('Distance (km)','distance_km','number',false,'min="0" step="0.1"');
-  extraInitial={origin:d.origin||'',destination:d.destination||'',driver:d.driver||'',vehicle:d.vehicle||'',distance_km:d.distance_km||''};
+  special=field('Pickup / origin','origin','text',true)+field('Destination','destination','text',true)+select('Trip type','trip_type',['Passenger','Delivery','Courier','Freight','School transport','Other'])+field('Driver','driver','text',false)+field('Vehicle / registration','vehicle','text',false)+field('Distance (km)','distance_km','number',false,'min="0" step="0.1"')+field('Odometer reading','odometer','number',false,'min="0" step="1"')+field('Fuel used (litres)','fuel_litres','number',false,'min="0" step="0.1"');
+  extraInitial={origin:d.origin||'',destination:d.destination||'',trip_type:d.trip_type||'Passenger',driver:d.driver||'',vehicle:d.vehicle||'',distance_km:d.distance_km||'',odometer:d.odometer||'',fuel_litres:d.fuel_litres||''};
  }
  const amountLabel=businessType==='school'?'Total fees':businessType==='transport'?'Fare / delivery charge':businessType==='salon'?'Expected service charge':'Amount to track';
  const html=(businessType==='school'?'':field('Record type','record_type'))+field(cfg.title,'title')+field(cfg.party,'party_name','text',false)+field(cfg.reference,'reference','text',false)+field('Date','scheduled_date','date',false,'value="'+today()+'"')+special+(businessType==='school'?'':field(amountLabel+' ('+currencyCode+')','amount','number',false,'min="0" step="0.01" value="0"'))+select('Status','status',['open','in_progress','completed','cancelled'])+field('Notes','notes','text',false);
@@ -1183,8 +1183,8 @@ function openWorkItem(existing={}){
   const details={notes:o.notes||''};
   extras.forEach(f=>{const v=o[f.name];details[f.name]=f.type==='number'?Number(v||0):(v||'');});
   if(businessType==='school')Object.assign(details,{admission_number:o.admission_number||'',class_name:o.class_name||'',academic_term:o.academic_term||'',fees_paid:Number(o.fees_paid||0)});
-  if(businessType==='salon')Object.assign(details,{appointment_time:o.appointment_time||'',stylist:o.stylist||'',duration_minutes:Number(o.duration_minutes||0)});
-  if(businessType==='transport')Object.assign(details,{origin:o.origin||'',destination:o.destination||'',driver:o.driver||'',vehicle:o.vehicle||'',distance_km:Number(o.distance_km||0)});
+  if(businessType==='salon')Object.assign(details,{service_category:o.service_category||'',appointment_time:o.appointment_time||'',stylist:o.stylist||'',chair:o.chair||'',duration_minutes:Number(o.duration_minutes||0),appointment_status:o.appointment_status||'Booked'});
+  if(businessType==='transport')Object.assign(details,{origin:o.origin||'',destination:o.destination||'',trip_type:o.trip_type||'Passenger',driver:o.driver||'',vehicle:o.vehicle||'',distance_km:Number(o.distance_km||0),odometer:Number(o.odometer||0),fuel_litres:Number(o.fuel_litres||0)});
   const item={id:existing.id||uid(),business_type:businessType,record_type:businessType==='school'?'Student / fee record':businessType==='salon'?'Appointment':businessType==='transport'?'Trip / delivery':o.record_type,title:o.title.trim(),party_name:o.party_name||'',reference:o.reference||'',scheduled_date:o.scheduled_date||'',amount:Number(o.amount||0),status:o.status,details,created_at:existing.created_at||new Date().toISOString()};
   if(businessType==='school'&&details.fees_paid>item.amount){alert('Fees paid cannot exceed total fees.');return;}
   const index=(data.workItems||[]).findIndex(x=>x.id===item.id);
