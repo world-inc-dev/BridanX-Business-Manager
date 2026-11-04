@@ -859,7 +859,7 @@ $('exportPdf').onclick=()=>{const win=window.open('','_blank');if(!win){alert('P
     meta.textContent='Ready · waiting for your saved records';
   }
 })();
-</script>
+<\/script>
 
 </body></html>';win.document.open();win.document.write(report);win.document.close();win.onload=()=>setTimeout(()=>win.print(),350)};
 
