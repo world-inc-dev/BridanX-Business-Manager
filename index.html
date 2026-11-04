@@ -593,7 +593,7 @@ body{background:radial-gradient(ellipse at 70% -18%,rgba(44,103,190,.25),transpa
  <div class="card table-card"><div class="table-wrap"><table style="min-width:760px"><thead><tr><th>Record</th><th>Title / details</th><th>Person / account</th><th>Date</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody id="workItemsRows"></tbody></table></div></div>
  <p class="statement-note">Operations records are separate from sales and expenses. Enter money here for tracking only; record actual payments in Sales or Transactions so financial reports remain accurate.</p>
 </section>
-<section class="view" id="settings"><div class="section-head"><div><h2>Business profile</h2><p>Manage your business identity and contact details.</p></div></div><div class="card"><form id="profileForm"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px"><div class="field"><label>Business name</label><input id="profileName" required maxlength="100"></div><div class="field"><label>Business type</label><select id="profileBusinessType"><option value="general">General business</option><option value="retail">Shop / retail</option><option value="restaurant">Restaurant / food</option><option value="salon">Salon / beauty</option><option value="pharmacy">Pharmacy</option><option value="agent">Mobile money / agent</option><option value="services">Professional services</option><option value="school">School / education</option><option value="transport">Transport / logistics</option><option value="manufacturing">Manufacturing / production</option><option value="agriculture">Agriculture / farming</option><option value="hospitality">Hotel / accommodation</option><option value="construction">Construction / hardware</option><option value="other">Other</option></select></div><div class="field"><label>Country</label><select id="profileCountry" required></select></div><div class="field"><label>Display currency</label><select id="profileCurrency" required></select></div><div class="field"><label>Business phone</label><input id="profilePhone" type="tel"></div><div class="field"><label>Business email</label><input id="profileEmail" type="email"></div></div><div class="brand-upload"><div class="brand-upload-preview"><img id="businessLogoPreview" alt="Business logo preview" hidden><span id="businessLogoPlaceholder">LOGO</span></div><div class="brand-upload-copy"><b>Business logo</b><small>Upload a square PNG, JPG or WebP logo. It will appear on reports and printed documents on this device.</small><div class="brand-upload-actions"><label class="btn" for="businessLogoFile">Choose logo</label><button class="btn danger" id="removeBusinessLogo" type="button">Remove</button></div><input id="businessLogoFile" type="file" accept="image/png,image/jpeg,image/webp" hidden><div id="businessLogoMessage" class="brand-upload-message"></div></div></div><div class="form-actions"><button class="btn primary">Save business profile</button></div><div id="profileMessage" style="font-size:12px;color:var(--muted);margin-top:10px"></div></form></div><article class="card" style="margin-top:16px"><div class="section-head"><div><h2>Data backup & recovery</h2><p>Download a copy of your business records or merge records from a previous BridanX backup.</p></div></div><div class="toolbar"><button class="btn primary" id="bxDownloadBackup" type="button">↓ Download data backup</button><button class="btn" id="bxChooseBackup" type="button">↑ Restore from backup</button><input id="bxBackupFile" type="file" accept=".json,application/json" hidden></div><p id="bxBackupStatus" class="statement-note" aria-live="polite">Backups include transactions, sales, inventory, customers, customer debts and business operations records. Restoring merges records and does not delete existing data.</p></article></div></section>
+<section class="view" id="settings"><div class="section-head"><div><h2>Business profile</h2><p>Manage your business identity and contact details.</p></div></div><div class="card"><form id="profileForm"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px"><div class="field"><label>Business name</label><input id="profileName" required maxlength="100"></div><div class="field"><label>Business type</label><select id="profileBusinessType"><option value="general">General business</option><option value="retail">Shop / retail</option><option value="restaurant">Restaurant / food</option><option value="salon">Salon / beauty</option><option value="pharmacy">Pharmacy</option><option value="agent">Mobile money / agent</option><option value="services">Professional services</option><option value="school">School / education</option><option value="transport">Transport / logistics</option><option value="manufacturing">Manufacturing / production</option><option value="agriculture">Agriculture / farming</option><option value="hospitality">Hotel / accommodation</option><option value="construction">Construction / hardware</option><option value="other">Other</option></select></div><div class="field"><label>Country</label><select id="profileCountry" required></select></div><div class="field"><label>Display currency</label><select id="profileCurrency" required></select></div><div class="field"><label>Business phone</label><input id="profilePhone" type="tel"></div><div class="field"><label>Business email</label><input id="profileEmail" type="email"></div></div><div class="brand-upload"><div class="brand-upload-preview"><img id="businessLogoPreview" alt="Business logo preview" hidden><span id="businessLogoPlaceholder">LOGO</span></div><div class="brand-upload-copy"><b>Business logo</b><small>Upload a square PNG, JPG or WebP logo. It will appear on reports and printed documents on this device.</small><div class="brand-upload-actions"><label class="btn" for="businessLogoFile">Choose logo</label><button class="btn danger" id="removeBusinessLogo" type="button">Remove</button></div><input id="businessLogoFile" type="file" accept="image/png,image/jpeg,image/webp" hidden><div id="businessLogoMessage" class="brand-upload-message"></div></div></div><div class="form-actions"><button class="btn primary">Save business profile</button></div><div id="profileMessage" style="font-size:12px;color:var(--muted);margin-top:10px"></div></form></div><article class="card" style="margin-top:16px"><div class="section-head"><div><h2>Data backup & recovery</h2><p>Download a copy of your business records or merge records from a previous BridanX backup.</p></div></div><div class="toolbar"><button class="btn primary" id="bxDownloadBackup" type="button">↓ Download data backup</button><button class="btn" id="bxChooseBackup" type="button">↑ Restore from backup</button><input id="bxBackupFile" type="file" accept=".json,application/json" hidden></div><p id="bxBackupStatus" class="statement-note" aria-live="polite">Backups include transactions, sales, inventory, customers, debts, business operations and detailed stock movements. Restoring merges records and does not delete existing data.</p></article></div></section>
 <section class="view" id="plans">
  <div class="section-head"><div><h2>Plans & subscription</h2><p>Choose the tools that match the way your business operates.</p></div></div>
  <div class="notice" style="margin-bottom:18px">Payments are checked manually before a paid plan is confirmed. Keep your PesaJet transaction reference after paying.</div>
@@ -708,8 +708,8 @@ const sb=window.supabase.createClient(SB_URL,SB_KEY);
 const BASE_KEY='bx_business_data';
 const BASE_CURRENCY_KEY='bx_currency';
 let KEY=BASE_KEY, CURRENCY_KEY=BASE_CURRENCY_KEY;
-function emptyBusinessData(){return {transactions:[],sales:[],products:[],customers:[],debts:[],workItems:[]};}
-function normalizeBusinessData(value){return {transactions:Array.isArray(value?.transactions)?value.transactions:[],sales:Array.isArray(value?.sales)?value.sales:[],products:Array.isArray(value?.products)?value.products:[],customers:Array.isArray(value?.customers)?value.customers:[],debts:Array.isArray(value?.debts)?value.debts:[],workItems:Array.isArray(value?.workItems)?value.workItems:[]};}
+function emptyBusinessData(){return {transactions:[],sales:[],products:[],customers:[],debts:[],workItems:[],stockMovements:[]};}
+function normalizeBusinessData(value){return {transactions:Array.isArray(value?.transactions)?value.transactions:[],sales:Array.isArray(value?.sales)?value.sales:[],products:Array.isArray(value?.products)?value.products:[],customers:Array.isArray(value?.customers)?value.customers:[],debts:Array.isArray(value?.debts)?value.debts:[],workItems:Array.isArray(value?.workItems)?value.workItems:[],stockMovements:Array.isArray(value?.stockMovements)?value.stockMovements:[]};}
 let data;try{data=normalizeBusinessData(JSON.parse(localStorage.getItem(KEY)||'null'));}catch(error){console.warn('Saved browser data could not be read; starting with an empty workspace:',error);data=emptyBusinessData();}
 let authMode='login', currentUser=null, cloudBusy=false, cloudSyncEnabled=true, activationPromise=null, pendingOpenPlans=false;
 
@@ -811,7 +811,7 @@ function openStockMovement(product){
   }
   product.qty=String(next);product.cost=String(nextCost);
   if(!Array.isArray(inventoryMovements))inventoryMovements=[];
-  inventoryMovements.unshift({...movement,id:uid(),created_at:new Date().toISOString()});
+  inventoryMovements.unshift({...movement,id:uid(),created_at:new Date().toISOString()});data.stockMovements=inventoryMovements;
   save();if(currentUser&&cloudSyncEnabled)loadOperations().catch(error=>console.warn('Stock movement refresh failed:',error));
  });
 }
@@ -1251,7 +1251,7 @@ async function loadOperations(){
   sb.from('inventory_movements').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(200)
  ]);
  for(const x of [sr,ar,lr,hr,mr])if(x.error)throw x.error;
- suppliers=sr.data||[];attendanceRecords=ar.data||[];leaveRequests=lr.data||[];auditRecords=hr.data||[];inventoryMovements=mr.data||[];
+ suppliers=sr.data||[];attendanceRecords=ar.data||[];leaveRequests=lr.data||[];auditRecords=hr.data||[];inventoryMovements=mr.data||[];data.stockMovements=inventoryMovements;
  renderOperations();
 }
 function renderOperations(){
@@ -1765,16 +1765,16 @@ document.getElementById('bxBackupFile').addEventListener('change',async e=>{
   if(file.size>10*1024*1024)throw new Error('The backup file is larger than 10 MB.');
   const parsed=JSON.parse(await file.text());
   if(parsed?.app!=='BridanX Business Manager'||parsed?.version!==1||!parsed?.data||typeof parsed.data!=='object')throw new Error('This is not a supported BridanX Business Manager backup.');
-  const restored=normalizeBusinessData(parsed.data),keys=['transactions','sales','products','customers','debts','workItems'];
+  const restored=normalizeBusinessData(parsed.data),keys=['transactions','sales','products','customers','debts','workItems','stockMovements'];
   const counts=keys.map(k=>(restored[k]||[]).length);
   if(!counts.some(Boolean))throw new Error('The backup contains no business records to restore.');
-  if(!confirm('Restore and merge this backup?\n\nTransactions: '+counts[0]+'\nSales: '+counts[1]+'\nInventory items: '+counts[2]+'\nCustomers: '+counts[3]+'\nCustomer debts: '+counts[4]+'\nOperations records: '+counts[5]+'\n\nExisting records will not be deleted.'))return;
+  if(!confirm('Restore and merge this backup?\n\nTransactions: '+counts[0]+'\nSales: '+counts[1]+'\nInventory items: '+counts[2]+'\nCustomers: '+counts[3]+'\nCustomer debts: '+counts[4]+'\nOperations records: '+counts[5]+'\nStock movements: '+counts[6]+'\n\nExisting records will not be deleted.'))return;
   let added=0;
   for(const key of keys){
    const existing=data[key],ids=new Set(existing.map(x=>String(x.id||'')).filter(Boolean));
    const fingerprints=new Set(existing.map(x=>JSON.stringify(Object.fromEntries(Object.entries(x).filter(([k])=>k!=='id')))));
    for(const source of restored[key]){
-    const item={...source};if(!item.id)item.id=uid();
+    const item={...source};if(key==='stockMovements'){item.id=uid();item.inventory_id=null;item.user_id=currentUser?.id||null;}else if(!item.id)item.id=uid();
     const fingerprint=JSON.stringify(Object.fromEntries(Object.entries(item).filter(([k])=>k!=='id')));
     if(ids.has(String(item.id))||fingerprints.has(fingerprint))continue;
     existing.push(item);ids.add(String(item.id));fingerprints.add(fingerprint);added++;
@@ -1882,6 +1882,15 @@ async function syncTable(table,items){
  const rows=dbRows(table,items);const {error}=await sb.from(table).upsert(rows);
  if(error)throw error;
 }
+async function pushInventoryMovements(items){
+ if(!currentUser||!items.length)return;
+ const rows=items.map(x=>{
+  const product=(data.products||[]).find(p=>String(p.name||'').trim().toLowerCase()===String(x.product_name||'').trim().toLowerCase());
+  return {id:x.id||uid(),user_id:currentUser.id,inventory_id:product?.id||null,product_name:x.product_name,movement_type:x.movement_type,quantity_change:Number(x.quantity_change),previous_quantity:Number(x.previous_quantity),new_quantity:Number(x.new_quantity),unit_cost:Number(x.unit_cost||0),reason:x.reason||null,reference:x.reference||null,movement_date:x.movement_date||today()};
+ });
+ const {error}=await sb.from('inventory_movements').upsert(rows);
+ if(error)throw error;
+}
 async function pushWorkItems(items){
  if(!currentUser||!items.length)return;
  const rows=items.map(x=>({id:x.id||uid(),user_id:currentUser.id,business_type:x.business_type||businessType,record_type:x.record_type,title:x.title,party_name:x.party_name||null,reference:x.reference||null,status:x.status||'open',scheduled_date:x.scheduled_date||null,amount:Number(x.amount||0),details:x.details||{}}));
@@ -1895,7 +1904,7 @@ async function pushAllLocal(){
  }
 }
 const originalSave=save;
-save=()=>{localStorage.setItem(KEY,JSON.stringify(data));render();if(currentUser&&cloudSyncEnabled){pushAllLocal().then(()=>pushWorkItems(data.workItems||[])).then(()=>localStorage.setItem(KEY,JSON.stringify(data))).catch(e=>{console.error(e);alert('Saved on this device, but cloud sync failed: '+e.message);});}};
+save=()=>{localStorage.setItem(KEY,JSON.stringify(data));render();if(currentUser&&cloudSyncEnabled){pushAllLocal().then(()=>pushWorkItems(data.workItems||[])).then(()=>pushInventoryMovements(data.stockMovements||[])).then(()=>localStorage.setItem(KEY,JSON.stringify(data))).catch(e=>{console.error(e);alert('Saved on this device, but cloud sync failed: '+e.message);});}};
 sb.auth.getSession().then(({data:{session}})=>{if(session)activateUser(session.user);});
 sb.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_IN'&&session&&!currentUser){const openPlans=localStorage.getItem('bx_open_plans_after_signup')==='yes';setTimeout(()=>{activateUser(session.user,openPlans).then(()=>{if(openPlans)localStorage.removeItem('bx_open_plans_after_signup');}).catch(error=>console.error('Account activation failed:',error));},0);}});
 </script>
