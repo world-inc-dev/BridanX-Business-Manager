@@ -815,6 +815,7 @@ function reverseSaleStock(sale){
  sale.stock_deducted=false;
 }
 function dailyBusinessSale(){
+ if(businessType==='agent'){openAgentTransaction();return;}
  const t=businessActionTerms[businessType]||businessActionTerms.general;
  openModal(t.sale,field(t.item,'item')+field(t.customer,'customer','text',false)+field(businessReferenceLabels[businessType]||'Additional reference','business_detail','text',false)+field('Quantity','quantity','number',true,'min="0.01" step="0.01" value="1" data-calc-qty="quantity"')+field('Price per unit ('+currencyCode+')','unit_price','number',true,'min="0.01" step="0.01" data-calc-unit="unit_price"')+field('Calculated total ('+currencyCode+')','amount','number',true,'min="0.01" step="0.01" readonly data-calc-total="amount"')+select('Payment method','payment',['Cash','Mobile Money','Bank transfer','Card','Other'])+field('Date','date','date',true,'value="'+today()+'"'),o=>{const product=data.products.find(p=>String(p.name||'').trim().toLowerCase()===String(o.item||'').trim().toLowerCase());o.id=uid();o.quantity=Number(o.quantity||1);o.amount=(o.quantity*Number(o.unit_price||0)).toFixed(2);o.business_detail_label=businessReferenceLabels[businessType]||'Details';o.unit_cost_at_sale=product&&Number(product.cost)>0?Number(product.cost):null;if(!applySaleStock(o))return false;data.sales.push(o);data.transactions.push({description:t.sale+': '+o.item+(o.business_detail?' — '+(businessReferenceLabels[businessType]||'Reference')+': '+o.business_detail:''),category:'Sales',type:'Income',amount:o.amount,date:o.date});});
 }
@@ -865,6 +866,28 @@ function openStockMovement(product,suggestedQuantity=0){
   if(!Array.isArray(inventoryMovements))inventoryMovements=[];
   inventoryMovements.unshift({...movement,id:uid(),created_at:new Date().toISOString()});data.stockMovements=inventoryMovements;
   save();if(currentUser&&cloudSyncEnabled)loadOperations().catch(error=>console.warn('Stock movement refresh failed:',error));
+ });
+}
+function openAgentTransaction(){
+ const html=select('Network','network',['MTN','Airtel','Other'])+
+ select('Transaction type','agent_transaction_type',['Cash deposit','Cash withdrawal','Airtime','Data bundle','Bill payment','Money transfer','Other'])+
+ field('Transaction reference','transaction_reference','text',true)+field('Customer name (optional)','customer_name','text',false)+
+ field('Transaction amount ('+currencyCode+')','transaction_amount','number',true,'min="0.01" step="0.01"')+
+ field('Cash received ('+currencyCode+')','cash_received','number',false,'min="0" step="0.01" value="0"')+
+ field('Cash paid out ('+currencyCode+')','cash_paid_out','number',false,'min="0" step="0.01" value="0"')+
+ field('E-float received ('+currencyCode+')','efloat_received','number',false,'min="0" step="0.01" value="0"')+
+ field('E-float sent ('+currencyCode+')','efloat_sent','number',false,'min="0" step="0.01" value="0"')+
+ field('Commission earned ('+currencyCode+')','commission','number',false,'min="0" step="0.01" value="0"')+
+ field('Date','scheduled_date','date',true,'value="'+today()+'"')+
+ field('Notes','notes','text',false);
+ openModal('Record mobile money agent transaction',html,o=>{
+  const vals=['transaction_amount','cash_received','cash_paid_out','efloat_received','efloat_sent','commission'];
+  if(vals.some(k=>Number(o[k]||0)<0)){alert('Amounts cannot be negative.');return false;}
+  if(!o.transaction_reference.trim()){alert('Enter the transaction reference.');return false;}
+  const details={network:o.network,agent_transaction_type:o.agent_transaction_type,transaction_reference:o.transaction_reference.trim(),transaction_amount:Number(o.transaction_amount),cash_received:Number(o.cash_received||0),cash_paid_out:Number(o.cash_paid_out||0),efloat_received:Number(o.efloat_received||0),efloat_sent:Number(o.efloat_sent||0),commission:Number(o.commission||0),notes:o.notes||''};
+  const item={id:uid(),business_type:'agent',record_type:'Agent transaction',title:o.agent_transaction_type,party_name:o.customer_name||'',reference:o.transaction_reference.trim(),scheduled_date:o.scheduled_date||today(),amount:Number(o.transaction_amount),status:'completed',details,created_at:new Date().toISOString()};
+  data.workItems.unshift(item);
+  if(details.commission>0)data.transactions.push({id:uid(),description:'Agent commission — '+o.agent_transaction_type+' · '+o.transaction_reference.trim(),category:'Services',type:'Income',amount:String(details.commission),date:item.scheduled_date});
  });
 }
 function dailyBusinessStock(){
