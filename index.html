@@ -195,13 +195,29 @@ async function loadCloudData(){
    if(ok){data=local;await pushAllLocal();}
    else {data=local;cloudSyncEnabled=false;alert('Your existing records remain on this device. They were not imported into the cloud. You can import them later by signing in again.');}
   }else if(!remoteEmpty){
-   // Merge unique local records not already present in the cloud; never discard browser data silently.
+   // Merge browser-only records safely. Older local records may not have IDs,
+   // so compare their business fields before importing to prevent refresh duplicates.
    data=remote;
+   const fingerprint=(table,x)=>{
+    if(table==='transactions')return JSON.stringify([x.description||'',x.category||'Other',x.type||'',Number(x.amount||0),x.date||'']);
+    if(table==='sales')return JSON.stringify([x.item||'',x.customer||'',Number(x.amount||0),x.payment||'Other',x.date||'']);
+    if(table==='inventory')return JSON.stringify([x.name||'',x.sku||'',Number(x.qty||0),Number(x.price||0)]);
+    return JSON.stringify([x.name||'',x.phone||'',x.email||'']);
+   };
    for(const t of names){
     const key=localKey(t), cloudKey=remoteKey(t);
     const cloudIds=new Set((remote[cloudKey]||[]).map(x=>x.id));
-    const extras=(local[key]||[]).filter(x=>!cloudIds.has(x.id));
-    extras.forEach(x=>{if(!x.id)x.id=uid()});
+    const known=new Set((remote[cloudKey]||[]).map(x=>fingerprint(key,x)));
+    const seenLocal=new Set();
+    const extras=[];
+    for(const item of (local[key]||[])){
+     const fp=fingerprint(key,item);
+     if(item.id&&cloudIds.has(item.id))continue;
+     if(known.has(fp)||seenLocal.has(fp))continue;
+     seenLocal.add(fp);
+     if(!item.id)item.id=uid();
+     extras.push(item);
+    }
     if(extras.length){data[key].push(...extras);await syncTable(t,extras);}
    }
   }else data=remote;
@@ -236,7 +252,7 @@ async function pushAllLocal(){
  }
 }
 const originalSave=save;
-save=()=>{localStorage.setItem(KEY,JSON.stringify(data));render();if(currentUser&&cloudSyncEnabled){pushAllLocal().catch(e=>{console.error(e);alert('Saved on this device, but cloud sync failed: '+e.message);});}};
+save=()=>{localStorage.setItem(KEY,JSON.stringify(data));render();if(currentUser&&cloudSyncEnabled){pushAllLocal().then(()=>localStorage.setItem(KEY,JSON.stringify(data))).catch(e=>{console.error(e);alert('Saved on this device, but cloud sync failed: '+e.message);});}};
 sb.auth.getSession().then(({data:{session}})=>{if(session)activateUser(session.user);});
 sb.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_IN'&&session&&!currentUser)activateUser(session.user);});
 </script>
