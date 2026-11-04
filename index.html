@@ -223,7 +223,10 @@ async function syncTable(table,items){
  if(error)throw error;
 }
 async function pushAllLocal(){
- for(const table of ['transactions','sales','inventory','customers'])await syncTable(table,data[table]||[]);
+ for(const table of ['transactions','sales','inventory','customers']){
+  const key=table==='inventory'?'products':table;
+  await syncTable(table,data[key]||[]);
+ }
 }
 const originalSave=save;
 save=()=>{localStorage.setItem(KEY,JSON.stringify(data));render();if(currentUser&&cloudSyncEnabled){pushAllLocal().catch(e=>{console.error(e);alert('Saved on this device, but cloud sync failed: '+e.message);});}};
