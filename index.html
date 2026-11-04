@@ -518,6 +518,12 @@ body{background:radial-gradient(ellipse at 70% -18%,rgba(44,103,190,.25),transpa
     <button class="btn" id="bxAnalyze" type="button">✦ Analyze my business</button>
    </div>
    <div id="bxInsights" aria-live="polite" style="display:none;margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#081b27"></div>
+   <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line)">
+    <strong>Ask about your business</strong>
+    <p style="margin:4px 0 10px;color:var(--muted);font-size:12px">Ask a question about figures already saved in this workspace.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="bxQuestion" type="text" placeholder="e.g. How much do customers owe me?" style="flex:1;min-width:210px;background:#081b27;border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--text)"><button class="btn primary" id="bxAskQuestion" type="button">Ask question</button></div>
+    <div id="bxAnswer" aria-live="polite" style="display:none;margin-top:12px;padding:13px;border:1px solid var(--line);border-radius:11px;background:#0b2230"></div>
+   </div>
   </section>
  </section>
  <section class="view" id="transactions"><div class="section-head"><div><h2>Income & expenses</h2><p>Record and review money moving in and out of your business.</p></div><button class="btn primary" id="addTransaction">＋ Add transaction</button></div><div class="toolbar"><input class="field-input" id="transactionSearch" placeholder="Search transactions…" style="background:#0c202d;border:1px solid var(--line);color:var(--text);padding:10px 12px;border-radius:10px;min-width:220px"></div><div class="card table-card"><div class="table-wrap"><table><thead><tr><th>Description</th><th>Category</th><th>Type</th><th>Date</th><th>Amount</th><th>Actions</th></tr></thead><tbody id="transactionRows"></tbody></table></div></div></section>
@@ -1212,6 +1218,53 @@ function bxAnalyzeBusiness(){
  el.style.display='block';
 }
 document.getElementById('bxAnalyze').onclick=bxAnalyzeBusiness;
+function bxAnswerBusinessQuestion(){
+ const input=document.getElementById('bxQuestion'),out=document.getElementById('bxAnswer');
+ const q=String(input.value||'').trim().toLowerCase();
+ if(!q){out.textContent='Type a question first.';out.style.display='block';return;}
+ const tx=Array.isArray(data.transactions)?data.transactions:[];
+ const debts=Array.isArray(data.debts)?data.debts:[];
+ const products=Array.isArray(data.products)?data.products:[];
+ const sales=Array.isArray(data.sales)?data.sales:[];
+ const income=tx.filter(x=>String(x.type||'').toLowerCase()==='income');
+ const expenses=tx.filter(x=>String(x.type||'').toLowerCase()==='expense');
+ const outstanding=debts.reduce((s,d)=>s+Math.max(0,Number(d.total_amount||0)-Number(d.amount_paid||0)),0);
+ let answer='';
+ if(/owe|owing|outstanding debt|customer debt|debt balance/.test(q)){
+  answer='Customers currently owe '+bxMoney(outstanding)+' across '+debts.filter(d=>Number(d.total_amount||0)>Number(d.amount_paid||0)).length+' unpaid record(s).';
+ }else if(/highest sales month|best sales month|month.*highest sales|highest.*sales/.test(q)){
+  const totals={};
+  const rows=sales.length?sales:income;
+  rows.forEach(x=>{const raw=String(x.date||'');const d=new Date(raw);if(!raw||Number.isNaN(d.getTime()))return;const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');totals[key]=(totals[key]||0)+Number(x.amount||0);});
+  const best=Object.entries(totals).sort((a,b)=>b[1]-a[1])[0];
+  answer=best?'Your highest recorded sales month is '+new Date(best[0]+'-01T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'})+' with '+bxMoney(best[1])+'.':'I could not find dated sales records to compare by month.';
+ }else if(/total (income|revenue)|how much.*(income|revenue)|revenue.*total/.test(q)){
+  answer='Total recorded income is '+bxMoney(income.reduce((s,x)=>s+Number(x.amount||0),0))+'.';
+ }else if(/total (expense|expenses|spending)|how much.*(expense|spent)|spending.*total/.test(q)){
+  answer='Total recorded expenses are '+bxMoney(expenses.reduce((s,x)=>s+Number(x.amount||0),0))+'.';
+ }else if(/profit|net position|net income/.test(q)){
+  const a=income.reduce((s,x)=>s+Number(x.amount||0),0),b=expenses.reduce((s,x)=>s+Number(x.amount||0),0);
+  answer='Your recorded net position is '+bxMoney(a-b)+' (income '+bxMoney(a)+' minus expenses '+bxMoney(b)+').';
+ }else if(/top selling|best selling|most sold|popular product/.test(q)){
+  const totals={};sales.forEach(x=>{const key=String(x.item||x.product_name||'Unspecified item');totals[key]=(totals[key]||0)+Number(x.quantity||1);});
+  const best=Object.entries(totals).sort((a,b)=>b[1]-a[1])[0];
+  answer=best?'Your top-selling recorded item is '+best[0]+' with '+best[1]+' unit(s).':'There are no sales records available to rank products.';
+ }else if(/low stock|restock|stock running low/.test(q)){
+  const low=products.filter(p=>Number(p.qty||0)<=Number(p.reorder_level??p.min_stock??0));
+  answer=low.length?'These items are at or below their recorded reorder level: '+low.map(p=>String(p.name||'Unnamed item')+' ('+Number(p.qty||0)+')').join(', ')+'.':'No items are at or below a recorded reorder level.';
+ }else if(/how many customers|customer count|number of customers/.test(q)){
+  answer='There are '+(Array.isArray(data.customers)?data.customers.length:0)+' customer record(s) in this workspace.';
+ }else if(/inventory value|stock value|value of (my )?stock/.test(q)){
+  const value=products.reduce((s,p)=>s+Number(p.qty||0)*Number(p.cost||p.purchase_price||0),0);
+  answer='Estimated inventory cost value from available quantity and recorded unit cost is '+bxMoney(value)+'. Items without a recorded cost may be understated.';
+ }else{
+  answer='I can answer questions about customer debts, highest sales month, total income, total expenses, net position, top-selling products, low stock, customer count, and inventory value. Try one of those questions.';
+ }
+ out.textContent=answer;out.style.display='block';
+}
+document.getElementById('bxAskQuestion').onclick=bxAnswerBusinessQuestion;
+document.getElementById('bxQuestion').addEventListener('keydown',e=>{if(e.key==='Enter')bxAnswerBusinessQuestion();});
+
 async function bxAskAI(instruction){
  const {data:sessionData}=await sb.auth.getSession();
  const token=sessionData?.session?.access_token;
