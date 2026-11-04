@@ -83,7 +83,7 @@ let currencyCode=localStorage.getItem(CURRENCY_KEY)||'NGN';
 function currencyInfo(){return currencies.find(x=>x[1]===currencyCode)||currencies[0]}
 function money(n){const [country,code,locale]=currencyInfo();try{return new Intl.NumberFormat(locale,{style:'currency',currency:code,maximumFractionDigits:2}).format(Number(n||0))}catch(e){return code+' '+Number(n||0).toLocaleString()}}
 function updateCurrencyLabels(){document.querySelectorAll('[data-currency-label]').forEach(el=>el.textContent=currencyCode);}
-const save=()=>{localStorage.setItem(KEY,JSON.stringify(data));render()};
+let save=()=>{localStorage.setItem(KEY,JSON.stringify(data));render()};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const empty='<tr><td colspan="5"><div class="empty">No records yet. Add your first record to see it here.</div></td></tr>';
 function render(){
@@ -190,7 +190,8 @@ async function loadCloudData(){
    data=remote;
    for(const t of names){
     const cloudIds=new Set(remote[t].map(x=>x.id));
-    const extras=(local[t]||[]).filter(x=>x.id&&cloudIds.has(x.id)===false);
+    const extras=(local[t]||[]).filter(x=>!cloudIds.has(x.id));
+    extras.forEach(x=>{if(!x.id)x.id=uid()});
     if(extras.length){data[t].push(...extras);await syncTable(t,extras);}
    }
   }else data=remote;
@@ -205,7 +206,8 @@ async function loadCloudData(){
 }
 function dbRows(table,items){
  return items.map(x=>{
-  const base={id:x.id||uid(),user_id:currentUser.id};
+  if(!x.id)x.id=uid();
+  const base={id:x.id,user_id:currentUser.id};
   if(table==='transactions')return {...base,description:x.description,category:x.category||'Other',type:x.type,amount:Number(x.amount),transaction_date:x.date};
   if(table==='sales')return {...base,item:x.item,customer:x.customer||null,amount:Number(x.amount),payment_method:x.payment||'Other',sale_date:x.date};
   if(table==='inventory')return {...base,name:x.name,sku:x.sku||null,quantity:Number(x.qty||0),unit_price:Number(x.price||0)};
