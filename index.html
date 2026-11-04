@@ -44,7 +44,7 @@
  <button data-view="sales"><span class="ico">▤</span>Sales</button>
  <button data-view="inventory"><span class="ico">▦</span>Inventory</button>
  <button data-view="customers"><span class="ico">♙</span>Customers</button><button data-view="debts"><span class="ico">₦</span>Customer debts</button>
- <button data-view="reports"><span class="ico">▥</span>Reports</button><button data-view="accounting"><span class="ico">▣</span>Accounting</button><button data-view="settings"><span class="ico">⚙</span>Business settings</button>
+ <button data-view="reports"><span class="ico">▥</span>Reports</button><button data-view="accounting"><span class="ico">▣</span>Accounting</button><button data-view="payroll"><span class="ico">♙</span>Payroll</button><button data-view="settings"><span class="ico">⚙</span>Business settings</button>
  </nav></div>
  <div class="side-bottom"><b>BridanX Digital Business Hub</b>One clear view of your business. Your records are saved in this browser on this device.</div>
 </aside>
@@ -90,6 +90,13 @@
  <div class="grid report-grid" style="margin-bottom:16px"><article class="card"><div class="section-head"><div><h2>Customer invoices</h2><p>Create invoices, track payments and outstanding balances</p></div><button class="btn primary" id="newInvoice">＋ Create invoice</button></div><div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Customer</th><th>Due</th><th>Total</th><th>Paid</th><th>Balance</th><th>Action</th></tr></thead><tbody id="invoiceRows"></tbody></table></div></article><article class="card"><div class="section-head"><div><h2>Supplier bills</h2><p>Record purchases and amounts owed to suppliers</p></div><button class="btn primary" id="newSupplierBill">＋ Add supplier bill</button></div><div class="table-wrap"><table><thead><tr><th>Bill</th><th>Supplier</th><th>Due</th><th>Total</th><th>Paid</th><th>Balance</th><th>Action</th></tr></thead><tbody id="supplierBillRows"></tbody></table></div></article></div>
  <div class="card"><div class="section-head"><div><h2>Journal entries</h2><p>Review posted and draft entries</p></div></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Reference</th><th>Description</th><th>Status</th><th>Debit</th><th>Credit</th><th>Actions</th></tr></thead><tbody id="journalRows"></tbody></table></div></div>
  <p class="profit-note" style="margin-top:14px">Accounting note: only posted double-entry journals appear in these statements. Existing simple income/expense records and sales are not automatically converted, to avoid inventing accounting classifications. Enter opening balances and historical activity as balanced journal entries before relying on these statements.</p>
+</section>
+<section class="view" id="payroll">
+ <div class="section-head"><div><h2>Employees & payroll</h2><p>Maintain staff records, prepare monthly pay and record salary payments.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="addEmployee">＋ Add employee</button><button class="btn primary" id="addPayroll">＋ Prepare payroll</button></div></div>
+ <div class="grid stats"><article class="card"><div class="stat-top">Active employees</div><div class="stat-value" id="employeeCount">0</div></article><article class="card"><div class="stat-top">Payroll this month</div><div class="stat-value" id="payrollMonthTotal">₦0</div></article><article class="card"><div class="stat-top">Pending salaries</div><div class="stat-value" id="payrollPending">₦0</div></article><article class="card"><div class="stat-top">Paid this month</div><div class="stat-value" id="payrollPaid">₦0</div></article></div>
+ <div class="card" style="margin-bottom:16px"><div class="section-head"><div><h2>Employee register</h2><p>Contact and employment details</p></div></div><div class="table-wrap"><table><thead><tr><th>Employee</th><th>Role</th><th>Phone</th><th>Type</th><th>Monthly basic pay</th><th>Status</th><th>Action</th></tr></thead><tbody id="employeeRows"></tbody></table></div></div>
+ <div class="card"><div class="section-head"><div><h2>Payroll history</h2><p>Gross pay, deductions and net salary by employee</p></div><button class="btn" id="printPayroll">Print payroll</button></div><div class="table-wrap"><table><thead><tr><th>Period</th><th>Employee</th><th>Basic + allowances</th><th>Deductions</th><th>Net pay</th><th>Status</th><th>Action</th></tr></thead><tbody id="payrollRows"></tbody></table></div></div>
+ <p class="statement-note" style="margin-top:12px">Payroll note: enter tax, pension and other deductions using the amounts applicable to your employee. The system does not calculate statutory PAYE or pension automatically. Marking a payroll record as paid posts salary expense and the cash/bank payment to your general ledger.</p>
 </section>
 <section class="view" id="settings"><div class="section-head"><div><h2>Business profile</h2><p>Manage your business identity and contact details.</p></div></div><div class="card"><form id="profileForm"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px"><div class="field"><label>Business name</label><input id="profileName" required maxlength="100"></div><div class="field"><label>Country</label><select id="profileCountry" required></select></div><div class="field"><label>Display currency</label><select id="profileCurrency" required></select></div><div class="field"><label>Business phone</label><input id="profilePhone" type="tel"></div><div class="field"><label>Business email</label><input id="profileEmail" type="email"></div></div><div class="form-actions"><button class="btn primary">Save business profile</button></div><div id="profileMessage" style="font-size:12px;color:var(--muted);margin-top:10px"></div></form></div></section></main></div>
 <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitle">Add record</h3><button class="close" id="closeModal">×</button></div><form id="recordForm"></form></div></div>
@@ -200,7 +207,7 @@ const SB_KEY='sb_publishable_xg0I3fVNZCuBLIqnBw-0YA_6yL9QbGC';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
 let authMode='login', currentUser=null, cloudBusy=false, cloudSyncEnabled=true, activationPromise=null;
 
-let accounting={accounts:[],entries:[],lines:[],documents:[]}, accountingRange={from:'',to:''};
+let accounting={accounts:[],entries:[],lines:[],documents:[]}, accountingRange={from:'',to:''};\nlet employees=[],payrollRecords=[];
 const defaultAccounts=[
  ['1000','Cash on hand','Asset'],['1010','Bank account','Asset'],['1100','Accounts receivable','Asset'],['1200','Inventory asset','Asset'],['1500','Equipment','Asset'],
  ['2000','Accounts payable','Liability'],['2100','Loans payable','Liability'],['2200','Tax payable','Liability'],
@@ -330,7 +337,72 @@ document.addEventListener('click',async e=>{
  if(prt){const ids={income:'incomeStatement',cash:'cashFlowStatement',trial:'trialBalance',balance:'balanceSheet',ledger:'generalLedger'};const el=$(ids[prt.dataset.acctPrint]);const win=window.open('','_blank');if(!win){alert('Allow pop-ups to print this statement.');return}win.document.write('<html><head><title>BridanX Financial Statement</title><style>body{font:13px Arial;margin:30px;color:#172b36}table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid #ddd;text-align:left}.statement-line{display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid #ddd}.statement-line span{color:#555}</style></head><body><h1>'+esc(businessProfile.business_name||'Business')+'</h1><h2>'+esc(prt.dataset.acctPrint.toUpperCase())+'</h2>'+el.innerHTML+'<script>window.onload=()=>window.print()<\/script></body></html>');win.document.close()}
 });
 
-const authMsg=document.getElementById('authMessage');
+
+async function loadPayroll(){
+ if(!currentUser)return;
+ const [er,pr]=await Promise.all([
+  sb.from('employees').select('*').eq('user_id',currentUser.id).order('full_name'),
+  sb.from('payroll_records').select('*').eq('user_id',currentUser.id).order('pay_period',{ascending:false})
+ ]);
+ if(er.error)throw er.error;if(pr.error)throw pr.error;
+ employees=er.data||[];payrollRecords=pr.data||[];renderPayroll();
+}
+function renderPayroll(){
+ const active=employees.filter(x=>x.is_active),month=new Date().toISOString().slice(0,7),thisMonth=payrollRecords.filter(x=>x.pay_period===month);
+ $('employeeCount').textContent=active.length;
+ $('payrollMonthTotal').textContent=money(thisMonth.reduce((n,x)=>n+Number(x.net_pay),0));
+ $('payrollPending').textContent=money(thisMonth.filter(x=>x.payment_status==='pending').reduce((n,x)=>n+Number(x.net_pay),0));
+ $('payrollPaid').textContent=money(thisMonth.filter(x=>x.payment_status==='paid').reduce((n,x)=>n+Number(x.net_pay),0));
+ $('employeeRows').innerHTML=employees.map(x=>'<tr><td>'+esc(x.full_name)+(x.email?'<br><small>'+esc(x.email)+'</small>':'')+'</td><td>'+esc(x.role_title||'—')+'</td><td>'+esc(x.phone||'—')+'</td><td>'+esc(x.employment_type)+'</td><td>'+money(x.base_salary)+'</td><td><span class="badge">'+(x.is_active?'Active':'Inactive')+'</span></td><td><button class="btn" data-employee-toggle="'+x.id+'">'+(x.is_active?'Deactivate':'Activate')+'</button></td></tr>').join('')||'<tr><td colspan="7"><div class="empty">No employees added yet.</div></td></tr>';
+ $('payrollRows').innerHTML=payrollRecords.map(x=>{const emp=employees.find(y=>y.id===x.employee_id),ded=Number(x.tax_deduction)+Number(x.pension_deduction)+Number(x.other_deductions);return '<tr><td>'+esc(x.pay_period)+'</td><td>'+esc(emp?.full_name||'Employee')+'</td><td>'+money(Number(x.basic_pay)+Number(x.allowances))+'</td><td>'+money(ded)+'</td><td>'+money(x.net_pay)+'</td><td><span class="badge">'+esc(x.payment_status)+'</span></td><td>'+(x.payment_status==='pending'?'<button class="btn primary" data-payroll-pay="'+x.id+'">Mark paid</button> ':'')+'<button class="btn" data-payslip="'+x.id+'">Payslip</button></td></tr>'}).join('')||'<tr><td colspan="7"><div class="empty">No payroll records yet.</div></td></tr>';
+}
+function addEmployeeForm(){
+ const html=field('Full name','full_name')+field('Job title / role','role_title','text',false)+field('Phone number','phone','tel',false)+field('Email','email','email',false)+select('Employment type','employment_type',['Full-time','Part-time','Contract','Temporary'])+field('Start date','start_date','date',true,'value="'+today()+'"')+field('Monthly basic salary','base_salary','number',true,'min="0" step="0.01"');
+ openModal('Add employee',html,async o=>{
+  const {error}=await sb.from('employees').insert({user_id:currentUser.id,full_name:o.full_name.trim(),role_title:o.role_title||null,phone:o.phone||null,email:o.email||null,employment_type:o.employment_type,start_date:o.start_date,base_salary:Number(o.base_salary||0)});
+  if(error){alert('Could not save employee: '+error.message);return}await loadPayroll();
+ },{});
+}
+function preparePayroll(){
+ const eligible=employees.filter(x=>x.is_active);if(!eligible.length){alert('Add an active employee first.');return}
+ const opts=eligible.map(x=>x.id+'|'+x.full_name).join(';');
+ const html=select('Employee','employee_id',opts.split(';'))+field('Pay period (YYYY-MM)','pay_period','month',true,'value="'+new Date().toISOString().slice(0,7)+'"')+field('Payment date','payment_date','date',true,'value="'+today()+'"')+field('Basic pay','basic_pay','number',true,'min="0" step="0.01"')+field('Allowances','allowances','number',false,'min="0" step="0.01" value="0"')+field('PAYE / tax deduction','tax_deduction','number',false,'min="0" step="0.01" value="0"')+field('Pension deduction','pension_deduction','number',false,'min="0" step="0.01" value="0"')+field('Other deductions','other_deductions','number',false,'min="0" step="0.01" value="0"');
+ openModal('Prepare monthly payroll',html,async o=>{
+  const basic=Number(o.basic_pay),allow=Number(o.allowances||0),tax=Number(o.tax_deduction||0),pen=Number(o.pension_deduction||0),other=Number(o.other_deductions||0);
+  if(basic+allow<tax+pen+other){alert('Deductions cannot exceed gross pay.');return}
+  const {error}=await sb.from('payroll_records').insert({user_id:currentUser.id,employee_id:o.employee_id,pay_period:o.pay_period,payment_date:o.payment_date,basic_pay:basic,allowances:allow,tax_deduction:tax,pension_deduction:pen,other_deductions:other});
+  if(error){alert('Could not prepare payroll: '+error.message);return}await loadPayroll();
+ },{});
+}
+async function payPayroll(id){
+ const p=payrollRecords.find(x=>x.id===id);if(!p||p.payment_status!=='pending')return;
+ const cashHtml=select('Pay from','cash_account',['1000 · Cash on hand','1010 · Bank account']);
+ openModal('Record salary payment',cashHtml,async o=>{
+  const cash=accountId(o.cash_account.startsWith('1010')?'1010':'1000'),salary=accountId('5400');
+  if(!cash||!salary){alert('Cash/bank or salaries account is missing.');return}
+  try{
+   await createPostedJournal('Salary payment · '+p.pay_period,'PAY-'+p.id.slice(0,8),p.payment_date,[{account_id:salary,debit:Number(p.net_pay),credit:0},{account_id:cash,debit:0,credit:Number(p.net_pay)}]);
+   const {data:heads,error:findErr}=await sb.from('journal_entries').select('id').eq('user_id',currentUser.id).eq('reference','PAY-'+p.id.slice(0,8)).limit(1);
+   if(findErr)throw findErr;
+   const {error}=await sb.from('payroll_records').update({payment_status:'paid',journal_entry_id:heads?.[0]?.id||null}).eq('id',id).eq('user_id',currentUser.id);
+   if(error)throw error;await loadPayroll();await loadAccounting();
+  }catch(e){alert('Salary payment could not be posted: '+e.message)}
+ },{});
+}
+function printPayslip(id){
+ const p=payrollRecords.find(x=>x.id===id),emp=employees.find(x=>x.id===p?.employee_id);if(!p)return;
+ const w=window.open('','_blank');if(!w){alert('Allow pop-ups to print the payslip.');return}
+ w.document.write('<html><body style="font:14px Arial;margin:40px"><h1>'+esc(businessProfile.business_name||'Business')+'</h1><h2>PAYSLIP</h2><p>Employee: '+esc(emp?.full_name||'')+'</p><p>Role: '+esc(emp?.role_title||'—')+'</p><p>Pay period: '+esc(p.pay_period)+'</p><hr><p>Basic pay: '+money(p.basic_pay)+'</p><p>Allowances: '+money(p.allowances)+'</p><p>Tax deduction: '+money(p.tax_deduction)+'</p><p>Pension deduction: '+money(p.pension_deduction)+'</p><p>Other deductions: '+money(p.other_deductions)+'</p><h3>Net pay: '+money(p.net_pay)+'</h3><p>Status: '+esc(p.payment_status)+'</p><script>window.onload=()=>window.print()<\\/script></body></html>');w.document.close();
+}
+$('addEmployee').onclick=addEmployeeForm;$('addPayroll').onclick=preparePayroll;
+$('printPayroll').onclick=()=>{const w=window.open('','_blank');if(!w)return;w.document.write('<html><body style="font:13px Arial;margin:30px"><h1>Payroll register</h1>'+ $('payrollRows').parentElement.innerHTML+'</body></html>');w.document.close();w.print()};
+document.addEventListener('click',async e=>{
+ const toggle=e.target.closest('[data-employee-toggle]'),pay=e.target.closest('[data-payroll-pay]'),slip=e.target.closest('[data-payslip]');
+ if(toggle){const emp=employees.find(x=>x.id===toggle.dataset.employeeToggle);if(emp){const {error}=await sb.from('employees').update({is_active:!emp.is_active}).eq('id',emp.id).eq('user_id',currentUser.id);if(error)alert(error.message);else await loadPayroll()}}
+ if(pay)payPayroll(pay.dataset.payrollPay);
+ if(slip)printPayslip(slip.dataset.payslip);
+});
+\nconst authMsg=document.getElementById('authMessage');
 function setAuthMode(mode){
  authMode=mode;
  document.getElementById('authTitle').textContent=mode==='login'?'Welcome back':'Create your business account';
