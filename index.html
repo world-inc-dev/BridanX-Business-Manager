@@ -19,7 +19,7 @@
 .auth-card h2{margin:0 0 6px;font-size:25px}.auth-card p{color:#91aab4;font-size:13px;margin:0 0 20px}
 .auth-card .field{margin-bottom:12px}.auth-tabs{display:flex;gap:8px;margin-bottom:18px}.auth-tabs button{flex:1}
 #authMessage{min-height:20px;color:#ffb8a8;font-size:12px;margin-top:10px}
-#accountBar{display:flex;align-items:center;gap:8px}.auth-email{font-size:11px;color:#91aab4;max-width:170px;overflow:hidden;text-overflow:ellipsis}
+#accountBar{display:flex;align-items:center;gap:8px}.auth-business-name{font-size:12px;font-weight:750;color:#e9f4f5;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style>
 <div id="authGate">
  <div class="auth-card">
@@ -50,7 +50,7 @@
  <div class="side-bottom"><b>BridanX Digital Business Hub</b>One clear view of your business. Your records are saved in this browser on this device.</div>
 </aside>
 <main class="main">
- <header class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="btn mobile-menu" id="menuBtn">☰</button><div><div class="eyebrow">BUSINESS WORKSPACE</div><h1 id="pageTitle">Overview</h1></div></div><div class="top-actions"><div id="accountBar"><span class="auth-email" id="signedInEmail"></span><button class="btn" id="signOutBtn" type="button">Sign out</button></div><select id="currencySelect" aria-label="Display currency" class="date-pill" style="max-width:170px;background:#0c202d;color:var(--text);border:1px solid var(--line)"></select><div class="date-pill" id="today"></div><div class="avatar">BX</div></div></header>
+ <header class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="btn mobile-menu" id="menuBtn">☰</button><div><div class="eyebrow">BUSINESS WORKSPACE</div><h1 id="pageTitle">Overview</h1></div></div><div class="top-actions"><div id="accountBar"><span class="auth-business-name" id="signedInBusinessName">My Business</span><button class="btn" id="signOutBtn" type="button">Sign out</button></div><select id="currencySelect" aria-label="Display currency" class="date-pill" style="max-width:170px;background:#0c202d;color:var(--text);border:1px solid var(--line)"></select><div class="date-pill" id="today"></div><div class="avatar">BX</div></div></header>
  <section class="view active" id="overview">
   <div class="notice">Welcome to your business workspace. Add your first transaction, sale, product or customer to get started.</div>
   <section class="card" id="bxAssistant" style="margin:0 0 20px;border-color:#237267;background:linear-gradient(135deg,#10343b,#0c2230)">
@@ -714,6 +714,7 @@ document.getElementById('authForm').addEventListener('submit',async e=>{
  await activateUser(result.data.user);
 });
 document.getElementById('signOutBtn').onclick=async()=>{await sb.auth.signOut();currentUser=null;isPlatformOwner=false;cloudSyncEnabled=true;data=emptyBusinessData();render();document.getElementById('appShell').style.display='none';document.getElementById('authGate').style.display='grid';};
+function setBusinessHeader(name){const el=document.getElementById('signedInBusinessName');if(el){const value=String(name||'My Business').trim()||'My Business';el.textContent=value;el.title=value;}}
 function uid(){return crypto.randomUUID()}
 async function activateUser(user){
  if(activationPromise){await activationPromise;return;}
@@ -722,7 +723,7 @@ async function activateUser(user){
   // Keep browser-side records strictly separated by authenticated account.
   KEY=BASE_KEY+':'+user.id;CURRENCY_KEY=BASE_CURRENCY_KEY+':'+user.id;
   try{data=normalizeBusinessData(JSON.parse(localStorage.getItem(KEY)||'null'));}catch(_){data=emptyBusinessData();}
-  currentUser=user;document.getElementById('signedInEmail').textContent=user.email||'Account';
+  currentUser=user;setBusinessHeader(user.user_metadata?.business_name||'My Business');
   document.getElementById('authGate').style.display='none';document.getElementById('appShell').style.display='grid';
   await loadCloudData();
   await loadAccounting();
@@ -739,7 +740,7 @@ async function saveBusinessProfile(){
  if(!payload.business_name){message.textContent='Please enter your business name.';return}
  const {error}=await sb.from('business_profiles').upsert({user_id:currentUser.id,...payload});
  if(error){message.textContent='Could not save: '+error.message;return}
- businessProfile={...businessProfile,...payload};currencyCode=payload.currency_code;businessProfile={...businessProfile,...payload};localStorage.setItem(CURRENCY_KEY,currencyCode);currencySelect.value=currencyCode;updateCurrencyLabels();render();message.textContent='Business profile saved successfully.';
+ businessProfile={...businessProfile,...payload};setBusinessHeader(payload.business_name);currencyCode=payload.currency_code;businessProfile={...businessProfile,...payload};localStorage.setItem(CURRENCY_KEY,currencyCode);currencySelect.value=currencyCode;updateCurrencyLabels();render();message.textContent='Business profile saved successfully.';
 }
 $('profileForm').addEventListener('submit',async e=>{e.preventDefault();await saveBusinessProfile()});
 function rowWithId(x){return {...x,id:x.id||uid()}}
@@ -800,6 +801,7 @@ async function loadCloudData(){
    const {error}=await sb.from('business_profiles').upsert({user_id:currentUser.id,...businessProfile});
    if(error)throw error;
   }else businessProfile={...businessProfile,...profile};
+  setBusinessHeader(businessProfile.business_name||'My Business');
   const selectedCountry=businessProfile.country_code||'UG';
   const countryDefaultCurrency=currencyForCountry(selectedCountry);
   if(!profile||!businessProfile.currency_code||businessProfile.currency_code!==countryDefaultCurrency){businessProfile.country_code=selectedCountry;businessProfile.currency_code=countryDefaultCurrency;const {error:currencyFixError}=await sb.from('business_profiles').upsert({user_id:currentUser.id,...businessProfile});if(currencyFixError)throw currencyFixError;}
