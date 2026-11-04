@@ -877,7 +877,7 @@ function openRetailCheckout(){
  '<div class="field"><label>Available inventory</label><div style="font-size:12px;line-height:1.7;max-height:130px;overflow:auto">'+list+'</div></div>'+
  field('Customer name (optional)','customer','text',false)+select('Payment method','payment',['Cash','Mobile Money','Bank transfer','Card','Other'])+
  field('Amount received ('+currencyCode+')','amount_received','number',true,'min="0" step="0.01" value="0"')+
- field('Date','date','date',true,'value="'+today()+'")');
+ field('Date','date','date',true,'value="'+today()+'"');
  openModal(businessType==='supermarket'?'Supermarket checkout':'Shop checkout',html,o=>{
   const lines=String(o.cart_lines||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
   if(!lines.length){alert('Enter at least one product line.');return false;}
