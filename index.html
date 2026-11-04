@@ -134,7 +134,8 @@ function currencyForCountry(code){
  code==='US'?'USD':'USD');
 }
 const currencyNames=new Intl.DisplayNames(['en'],{type:'currency'});
-const currencies=(typeof Intl.supportedValuesOf==='function'?Intl.supportedValuesOf('currency'):['USD','EUR','GBP','NGN','UGX','KES','TZS','ZAR','GHS','CAD','AUD','INR','JPY','CNY']).map(code=>[currencyNames.of(code)||code,code,'en']);
+const currencyCodes=[...new Set([...(typeof Intl.supportedValuesOf==='function'?Intl.supportedValuesOf('currency'):['USD','EUR','GBP','NGN','UGX','KES','TZS','ZAR','GHS','CAD','AUD','INR','JPY','CNY']),...Object.values(countryCurrency)])];
+const currencies=currencyCodes.map(code=>[currencyNames.of(code)||code,code,'en']).sort((a,b)=>a[0].localeCompare(b[0]));
 let currencyCode=localStorage.getItem(CURRENCY_KEY)||'UGX';
 let businessProfile={business_name:'My Business',country_code:'UG',currency_code:currencyCode,contact_phone:'',contact_email:''};
 function currencyInfo(){return currencies.find(x=>x[1]===currencyCode)||['US Dollar','USD','en']}
