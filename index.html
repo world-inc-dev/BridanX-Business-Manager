@@ -852,9 +852,21 @@ async function activateUser(user,openPlansAfterLogin=false){
   currentUser=user;setBusinessHeader(user.user_metadata?.business_name||'My Business');
   document.getElementById('authGate').style.display='none';document.getElementById('appShell').style.display='grid';
   const moduleErrors=[];
-  for(const [label,loader] of [['Business records',loadCloudData],['Accounting',loadAccounting],['Payroll',loadPayroll],['Business operations',loadOperations],['Subscription',loadMySubscription],['Platform admin',mountPlatformAdmin]]){
+  // Resolve the subscription before loading paid modules. Their database
+  // triggers correctly reject Free-plan writes, so do not seed/load them
+  // for accounts that are not entitled to those modules.
+  for(const [label,loader] of [['Subscription',loadMySubscription],['Business records',loadCloudData]]){
    try{await loader();}catch(error){console.error(label+' failed to load:',error);moduleErrors.push(label);}
   }
+  if(currentPlan==='Professional'){
+   for(const [label,loader] of [['Accounting',loadAccounting],['Payroll',loadPayroll],['Business operations',loadOperations]]){
+    try{await loader();}catch(error){console.error(label+' failed to load:',error);moduleErrors.push(label);}
+   }
+  }else{
+   accounting={accounts:[],entries:[],lines:[],documents:[]};
+   employees=[];payrollRecords=[];
+  }
+  try{await mountPlatformAdmin();}catch(error){console.error('Platform admin failed to load:',error);moduleErrors.push('Platform admin');}
   if(moduleErrors.length){
    let notice=document.getElementById('loginLoadNotice');
    if(!notice){notice=document.createElement('div');notice.id='loginLoadNotice';notice.className='notice';notice.style.margin='12px 20px';document.getElementById('appShell').querySelector('main')?.prepend(notice);}
