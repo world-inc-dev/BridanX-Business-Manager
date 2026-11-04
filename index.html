@@ -133,7 +133,7 @@ render();
 const SB_URL='https://yuzzpyellyqicyezjvka.supabase.co';
 const SB_KEY='sb_publishable_xg0I3fVNZCuBLIqnBw-0YA_6yL9QbGC';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-let authMode='login', currentUser=null, cloudBusy=false, cloudSyncEnabled=true;
+let authMode='login', currentUser=null, cloudBusy=false, cloudSyncEnabled=true, activationPromise=null;
 const authMsg=document.getElementById('authMessage');
 function setAuthMode(mode){
  authMode=mode;
@@ -162,10 +162,14 @@ document.getElementById('authForm').addEventListener('submit',async e=>{
 document.getElementById('signOutBtn').onclick=async()=>{await sb.auth.signOut();currentUser=null;document.getElementById('appShell').style.display='none';document.getElementById('authGate').style.display='grid';};
 function uid(){return crypto.randomUUID()}
 async function activateUser(user){
- cloudSyncEnabled=true;
- currentUser=user;document.getElementById('signedInEmail').textContent=user.email||'Account';
- document.getElementById('authGate').style.display='none';document.getElementById('appShell').style.display='grid';
- await loadCloudData();
+ if(activationPromise){await activationPromise;return;}
+ activationPromise=(async()=>{
+  cloudSyncEnabled=true;
+  currentUser=user;document.getElementById('signedInEmail').textContent=user.email||'Account';
+  document.getElementById('authGate').style.display='none';document.getElementById('appShell').style.display='grid';
+  await loadCloudData();
+ })();
+ try{await activationPromise;}finally{activationPromise=null;}
 }
 function rowWithId(x){return {...x,id:x.id||uid()}}
 async function loadCloudData(){
