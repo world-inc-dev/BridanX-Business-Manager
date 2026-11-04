@@ -558,7 +558,7 @@ function bxCommitAction(){
  const a=bxPendingAction;if(!a)return;
  const date=today();
  if(a.type==='sale'){
-  data.sales.push({item:a.item,customer:a.customer,amount:String(a.total),payment:'Cash',date});
+  const soldProduct=a.productId&&data.products.find(p=>String(p.id)===String(a.productId));data.sales.push({item:a.item,customer:a.customer,amount:String(a.total),quantity:a.qty,unit_cost_at_sale:soldProduct&&Number(soldProduct.cost)>0?Number(soldProduct.cost):null,payment:'Cash',date});
   data.transactions.push({description:'Sale: '+a.item,category:'Sales',type:'Income',amount:String(a.total),date});
   if(a.customer&&!data.customers.some(x=>String(x.name||'').toLowerCase()===a.customer.toLowerCase()))data.customers.push({name:a.customer,phone:'',email:'',date});
   if(a.total>a.paid)data.debts.push({customer_name:a.customer||'Unspecified customer',phone:'',description:a.item+' · '+a.qty+' unit(s)',total_amount:String(a.total),amount_paid:String(a.paid),due_date:''});
