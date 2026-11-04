@@ -513,6 +513,11 @@ body{background:radial-gradient(ellipse at 70% -18%,rgba(44,103,190,.25),transpa
    <div class="field"><label for="bxCommand">Your instruction</label><textarea id="bxCommand" rows="3" placeholder="Example: I sold 5 bags of rice at 30,000 each to John. He paid 100,000 cash." style="width:100%;resize:vertical;background:#081b27;border:1px solid var(--line);border-radius:11px;padding:12px;color:var(--text)"></textarea></div>
    <div class="overview-assistant-actions"><button class="btn primary" id="bxInterpret" type="button">Understand instruction</button><span id="bxAssistantStatus" aria-live="polite">It will prepare a preview before saving anything.</span></div>
    <div id="bxAssistantPreview" style="display:none;margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#081b27"></div>
+   <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)">
+    <div style="flex:1;min-width:190px"><strong>Business health check</strong><p style="margin:4px 0 0;color:var(--muted);font-size:12px">Get a quick summary from your saved records. This analysis does not change anything.</p></div>
+    <button class="btn" id="bxAnalyze" type="button">✦ Analyze my business</button>
+   </div>
+   <div id="bxInsights" aria-live="polite" style="display:none;margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#081b27"></div>
   </section>
  </section>
  <section class="view" id="transactions"><div class="section-head"><div><h2>Income & expenses</h2><p>Record and review money moving in and out of your business.</p></div><button class="btn primary" id="addTransaction">＋ Add transaction</button></div><div class="toolbar"><input class="field-input" id="transactionSearch" placeholder="Search transactions…" style="background:#0c202d;border:1px solid var(--line);color:var(--text);padding:10px 12px;border-radius:10px;min-width:220px"></div><div class="card table-card"><div class="table-wrap"><table><thead><tr><th>Description</th><th>Category</th><th>Type</th><th>Date</th><th>Amount</th><th>Actions</th></tr></thead><tbody id="transactionRows"></tbody></table></div></div></section>
@@ -1182,6 +1187,31 @@ function bxCommitAction(){
  }
  bxPendingAction=null;save();document.getElementById('bxCommand').value='';document.getElementById('bxAssistantPreview').style.display='none';document.getElementById('bxAssistantStatus').textContent='Saved. Business records and dashboard have been updated.';
 }
+function bxAnalyzeBusiness(){
+ const tx=Array.isArray(data.transactions)?data.transactions:[];
+ const income=tx.filter(x=>String(x.type||'').toLowerCase()==='income').reduce((s,x)=>s+Number(x.amount||0),0);
+ const expenses=tx.filter(x=>String(x.type||'').toLowerCase()==='expense').reduce((s,x)=>s+Number(x.amount||0),0);
+ const net=income-expenses;
+ const debts=Array.isArray(data.debts)?data.debts:[];
+ const outstanding=debts.reduce((s,d)=>s+Math.max(0,Number(d.total_amount||0)-Number(d.amount_paid||0)),0);
+ const unpaid=debts.filter(d=>Number(d.total_amount||0)>Number(d.amount_paid||0)).length;
+ const products=Array.isArray(data.products)?data.products:[];
+ const lowStock=products.filter(p=>Number(p.qty||0)<=Number(p.reorder_level??p.min_stock??0)&&Number(p.qty||0)>=0);
+ const count=tx.length;
+ const notes=[];
+ if(!count)notes.push('No transactions have been recorded yet. Add income and expenses to build a useful financial picture.');
+ else if(net>0)notes.push('Your recorded income is higher than expenses by '+bxMoney(net)+'. Keep monitoring costs to protect this margin.');
+ else if(net<0)notes.push('Recorded expenses exceed income by '+bxMoney(Math.abs(net))+'. Review spending categories and check whether any income is missing.');
+ else notes.push('Recorded income and expenses currently balance. Keep records up to date to see a clearer trend.');
+ if(unpaid)notes.push(unpaid+' customer debt record(s) still have an outstanding balance of '+bxMoney(outstanding)+'. Follow up on collections.');
+ else notes.push('No outstanding customer balances were found in the debt records.');
+ if(lowStock.length)notes.push(lowStock.length+' inventory item(s) may need a stock check. Review inventory before placing orders.');
+ else if(products.length)notes.push('No items are at or below a recorded reorder threshold.');
+ const el=document.getElementById('bxInsights');
+ el.innerHTML='<strong>Business health summary</strong><div class="grid stats" style="margin-top:12px"><article class="card"><div class="stat-top">Recorded income</div><div class="stat-value">'+esc(bxMoney(income))+'</div></article><article class="card"><div class="stat-top">Recorded expenses</div><div class="stat-value">'+esc(bxMoney(expenses))+'</div></article><article class="card"><div class="stat-top">Net position</div><div class="stat-value">'+esc(bxMoney(net))+'</div></article><article class="card"><div class="stat-top">Outstanding debts</div><div class="stat-value">'+esc(bxMoney(outstanding))+'</div></article></div><ul style="margin:12px 0 0;padding-left:20px;color:#d7e6e9">'+notes.map(n=>'<li style="margin:6px 0">'+esc(n)+'</li>').join('')+'</ul><p style="margin:12px 0 0;color:var(--muted);font-size:11px">Based on '+count+' saved transaction(s), '+debts.length+' debt record(s) and '+products.length+' inventory item(s). This is a summary of recorded data, not a forecast or accounting advice.</p>';
+ el.style.display='block';
+}
+document.getElementById('bxAnalyze').onclick=bxAnalyzeBusiness;
 async function bxAskAI(instruction){
  const {data:sessionData}=await sb.auth.getSession();
  const token=sessionData?.session?.access_token;
