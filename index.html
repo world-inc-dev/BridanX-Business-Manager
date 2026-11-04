@@ -136,7 +136,7 @@ function currencyForCountry(code){
 const currencyNames=new Intl.DisplayNames(['en'],{type:'currency'});
 const currencyCodes=[...new Set([...(typeof Intl.supportedValuesOf==='function'?Intl.supportedValuesOf('currency'):['USD','EUR','GBP','NGN','UGX','KES','TZS','ZAR','GHS','CAD','AUD','INR','JPY','CNY']),...Object.values(countryCurrency)])];
 const currencies=currencyCodes.map(code=>[currencyNames.of(code)||code,code,'en']).sort((a,b)=>a[0].localeCompare(b[0]));
-let currencyCode=localStorage.getItem(CURRENCY_KEY)||'UGX';
+let currencyCode='UGX';
 let businessProfile={business_name:'My Business',country_code:'UG',currency_code:currencyCode,contact_phone:'',contact_email:''};
 function currencyInfo(){return currencies.find(x=>x[1]===currencyCode)||['US Dollar','USD','en']}
 function money(n){const [country,code,locale]=currencyInfo();try{return new Intl.NumberFormat(navigator.language||'en',{style:'currency',currency:code,maximumFractionDigits:2}).format(Number(n||0))}catch(e){return code+' '+Number(n||0).toLocaleString()}}
@@ -663,7 +663,10 @@ async function loadCloudData(){
    const {error}=await sb.from('business_profiles').upsert({user_id:currentUser.id,...businessProfile});
    if(error)throw error;
   }else businessProfile={...businessProfile,...profile};
-  currencyCode=businessProfile.currency_code||currencyForCountry(businessProfile.country_code||'UG');localStorage.setItem(CURRENCY_KEY,currencyCode);currencySelect.value=currencyCode;showBusinessProfile();render();
+  const selectedCountry=businessProfile.country_code||'UG';
+  const countryDefaultCurrency=currencyForCountry(selectedCountry);
+  if(!profile||!businessProfile.currency_code||businessProfile.currency_code!==countryDefaultCurrency){businessProfile.country_code=selectedCountry;businessProfile.currency_code=countryDefaultCurrency;const {error:currencyFixError}=await sb.from('business_profiles').upsert({user_id:currentUser.id,...businessProfile});if(currencyFixError)throw currencyFixError;}
+  currencyCode=businessProfile.currency_code;localStorage.setItem(CURRENCY_KEY,currencyCode);currencySelect.value=currencyCode;showBusinessProfile();render();
  }catch(err){console.error(err);alert('Cloud sync could not finish: '+err.message+'. Your browser records are still kept on this device.');}
 }
 function dbRows(table,items){
