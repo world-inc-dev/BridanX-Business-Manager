@@ -63,6 +63,53 @@ th{background:#0a1d2b}
 @media(max-width:650px){.dashboard-hero{min-height:0;padding:23px 20px}.hero-art{flex-basis:105px;height:120px;opacity:.85}.hero-orbit.orbit-one{width:112px;height:70px}.hero-orbit.orbit-two{width:95px;height:95px}.hero-emblem{width:65px;height:65px;border-radius:20px}.hero-emblem img{width:51px;height:51px}.hero-caption{right:-5px}.hero-caption b{font-size:8px}.hero-caption small{font-size:6px}.hero-copy h2{font-size:26px}.quick-actions{gap:5px}.quick-label{width:100%;margin-bottom:3px}.quick-actions button{padding:8px 9px}}
 @media(max-width:420px){.hero-art{display:none}.dashboard-hero{padding:22px 18px}.hero-copy h2{font-size:25px}}
 </style>
+<style>
+/* Consistent page system across every workspace module */
+.view{animation:viewReveal .24s ease both}
+@keyframes viewReveal{from{opacity:.72;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.view>.section-head{padding:3px 0 17px;margin:0 0 19px;border-bottom:1px solid rgba(42,79,94,.55);align-items:center}
+.view>.section-head h2{font-size:20px;letter-spacing:-.45px;font-weight:780}
+.view>.section-head p{font-size:12px;line-height:1.6;max-width:620px}
+.view>.section-head>.btn,.view>.section-head>div>.btn{white-space:nowrap}
+.view>.grid.stats{margin-top:0;margin-bottom:18px}
+.view>.grid.stats>.card{position:relative;overflow:hidden}
+.view>.grid.stats>.card:after{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:linear-gradient(180deg,#39d9c5,transparent);opacity:.55}
+.view>.card,.view>article.card{margin-bottom:16px}
+.view .card>.section-head{margin-bottom:13px}
+.view .card>.section-head h2{font-size:15px;letter-spacing:-.2px}
+.view .card>.section-head p{font-size:11px}
+.view .toolbar{align-items:center;padding:12px;margin:0 0 14px;border:1px solid #1b3949;border-radius:14px;background:#0a1e2b}
+.view .toolbar input,.view .toolbar select{min-height:39px}
+.view .table-card,.view>.card:has(.table-wrap){border-radius:16px}
+.view table thead th{position:sticky;top:0;z-index:1;padding-top:14px;padding-bottom:14px;background:#0b202e;color:#91adb7;border-bottom:1px solid #294958}
+.view table tbody tr{transition:background .15s}
+.view table tbody tr:hover{background:rgba(39,104,111,.12)}
+.view table td{padding-top:14px;padding-bottom:14px}
+.view .empty{padding:36px 20px}
+.view .statement-note{line-height:1.7}
+.view .report-item{min-height:112px;display:flex;flex-direction:column;justify-content:center}
+.view .report-item strong{letter-spacing:-.7px}
+#settings>.card{padding:23px;background:linear-gradient(145deg,#102b3a,#0a1e2b)}
+#profileForm .field label{font-weight:650;color:#a9c2ca}
+#profileForm .field input,#profileForm .field select{min-height:43px}
+#profileForm .form-actions{justify-content:flex-start;padding-top:5px}
+#inventoryAlert{border-radius:13px;line-height:1.6}
+#plans .grid>.card{position:relative;overflow:hidden;padding:23px;display:flex;flex-direction:column;align-items:flex-start}
+#plans .grid>.card ul{padding-left:18px;color:#b5cbd1;font-size:12px;line-height:2}
+#plans .grid>.card .btn{margin-top:auto}
+#plans .grid>.card[style*="border-color"]{box-shadow:0 12px 30px #1bb9a511}
+#accounting .grid.report-grid>.card{min-width:0}
+@media(max-width:650px){
+ .view>.section-head{align-items:flex-start;gap:10px;flex-wrap:wrap;padding-bottom:14px;margin-bottom:15px}
+ .view>.section-head h2{font-size:18px}
+ .view>.section-head>button,.view>.section-head>div:last-child{max-width:100%}
+ .view>.section-head>div:last-child{display:flex;gap:7px;flex-wrap:wrap}
+ .view>.grid.stats{gap:9px}
+ .view .toolbar{padding:10px;gap:8px}
+ .view>.card,.view>article.card{margin-bottom:12px}
+ #settings>.card{padding:16px}
+}
+</style>
 </head>
 <body>
 
