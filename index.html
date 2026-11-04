@@ -44,7 +44,7 @@
  <button data-view="sales"><span class="ico">▤</span>Sales</button>
  <button data-view="inventory"><span class="ico">▦</span>Inventory</button>
  <button data-view="customers"><span class="ico">♙</span>Customers</button><button data-view="debts"><span class="ico">₦</span>Customer debts</button>
- <button data-view="reports"><span class="ico">▥</span>Reports</button><button data-view="accounting"><span class="ico">▣</span>Accounting</button><button data-view="payroll"><span class="ico">♙</span>Payroll</button><button data-view="settings"><span class="ico">⚙</span>Business settings</button>
+ <button data-view="reports"><span class="ico">▥</span>Reports</button><button data-view="accounting"><span class="ico">▣</span>Accounting</button><button data-view="payroll"><span class="ico">♙</span>Payroll</button><button data-view="suppliers"><span class="ico">▧</span>Suppliers</button><button data-view="audit"><span class="ico">◷</span>Activity log</button><button data-view="settings"><span class="ico">⚙</span>Business settings</button>
  </nav></div>
  <div class="side-bottom"><b>BridanX Digital Business Hub</b>One clear view of your business. Your records are saved in this browser on this device.</div>
 </aside>
@@ -103,8 +103,11 @@
  <div class="grid stats"><article class="card"><div class="stat-top">Active employees</div><div class="stat-value" id="employeeCount">0</div></article><article class="card"><div class="stat-top">Payroll this month</div><div class="stat-value" id="payrollMonthTotal">₦0</div></article><article class="card"><div class="stat-top">Pending salaries</div><div class="stat-value" id="payrollPending">₦0</div></article><article class="card"><div class="stat-top">Paid this month</div><div class="stat-value" id="payrollPaid">₦0</div></article></div>
  <div class="card" style="margin-bottom:16px"><div class="section-head"><div><h2>Employee register</h2><p>Contact and employment details</p></div></div><div class="table-wrap"><table><thead><tr><th>Employee</th><th>Role</th><th>Phone</th><th>Type</th><th>Monthly basic pay</th><th>Status</th><th>Action</th></tr></thead><tbody id="employeeRows"></tbody></table></div></div>
  <div class="card"><div class="section-head"><div><h2>Payroll history</h2><p>Gross pay, deductions and net salary by employee</p></div><button class="btn" id="printPayroll">Print payroll</button></div><div class="table-wrap"><table><thead><tr><th>Period</th><th>Employee</th><th>Basic + allowances</th><th>Deductions</th><th>Net pay</th><th>Status</th><th>Action</th></tr></thead><tbody id="payrollRows"></tbody></table></div></div>
+ <div class="grid report-grid" style="margin-top:16px"><article class="card"><div class="section-head"><div><h2>Daily attendance</h2><p>Record present, absent, late or half-day attendance</p></div><button class="btn primary" id="markAttendance">＋ Mark attendance</button></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Employee</th><th>Status</th><th>Check in</th><th>Check out</th><th>Notes</th></tr></thead><tbody id="attendanceRows"></tbody></table></div></article><article class="card"><div class="section-head"><div><h2>Leave requests</h2><p>Track leave and approve or reject requests</p></div><button class="btn primary" id="addLeave">＋ Add leave request</button></div><div class="table-wrap"><table><thead><tr><th>Employee</th><th>Type</th><th>Dates</th><th>Reason</th><th>Status / action</th></tr></thead><tbody id="leaveRows"></tbody></table></div></article></div>
  <p class="statement-note" style="margin-top:12px">Payroll note: enter tax, pension and other deductions using the amounts applicable to your employee. Tax and social contribution rules vary by country. Enter deductions according to your local regulations; automatic statutory calculations are not yet available. Marking a payroll record as paid posts salary expense and the cash/bank payment to your general ledger.</p>
 </section>
+<section class="view" id="suppliers"><div class="section-head"><div><h2>Suppliers</h2><p>Keep supplier contacts and purchase relationships in one place.</p></div><button class="btn primary" id="addSupplier">＋ Add supplier</button></div><div class="card table-card"><div class="table-wrap"><table><thead><tr><th>Supplier</th><th>Phone</th><th>Email</th><th>Address</th><th>Notes</th><th>Actions</th></tr></thead><tbody id="supplierRows"></tbody></table></div></div></section>
+<section class="view" id="audit"><div class="section-head"><div><h2>Business activity log</h2><p>Review changes to key business records, including who owns the records and when the change happened.</p></div><button class="btn" id="refreshAudit">↻ Refresh</button></div><div class="card table-card"><div class="table-wrap"><table><thead><tr><th>When</th><th>Area</th><th>Action</th><th>Record</th><th>Details</th></tr></thead><tbody id="auditRows"></tbody></table></div></div><p class="statement-note">The activity log is append-only through the application. It records changes made to supported business tables; it does not reconstruct older activity from before logging was enabled.</p></section>
 <section class="view" id="settings"><div class="section-head"><div><h2>Business profile</h2><p>Manage your business identity and contact details.</p></div></div><div class="card"><form id="profileForm"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px"><div class="field"><label>Business name</label><input id="profileName" required maxlength="100"></div><div class="field"><label>Country</label><select id="profileCountry" required></select></div><div class="field"><label>Display currency</label><select id="profileCurrency" required></select></div><div class="field"><label>Business phone</label><input id="profilePhone" type="tel"></div><div class="field"><label>Business email</label><input id="profileEmail" type="email"></div></div><div class="form-actions"><button class="btn primary">Save business profile</button></div><div id="profileMessage" style="font-size:12px;color:var(--muted);margin-top:10px"></div></form></div></section></main></div>
 <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h3 id="modalTitle">Add record</h3><button class="close" id="closeModal">×</button></div><form id="recordForm"></form></div></div>
 <script>
@@ -385,6 +388,62 @@ document.addEventListener('click',async e=>{
 });
 
 
+
+let suppliers=[],attendanceRecords=[],leaveRequests=[],auditRecords=[];
+async function loadOperations(){
+ if(!currentUser)return;
+ const [sr,ar,lr,hr]=await Promise.all([
+  sb.from('suppliers').select('*').eq('user_id',currentUser.id).order('name'),
+  sb.from('attendance_records').select('*').eq('user_id',currentUser.id).order('attendance_date',{ascending:false}).limit(100),
+  sb.from('leave_requests').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(100),
+  sb.from('activity_audit').select('*').eq('user_id',currentUser.id).order('changed_at',{ascending:false}).limit(100)
+ ]);
+ for(const x of [sr,ar,lr,hr])if(x.error)throw x.error;
+ suppliers=sr.data||[];attendanceRecords=ar.data||[];leaveRequests=lr.data||[];auditRecords=hr.data||[];
+ renderOperations();
+}
+function renderOperations(){
+ $('supplierRows').innerHTML=suppliers.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.phone||'—')+'</td><td>'+esc(x.email||'—')+'</td><td>'+esc(x.address||'—')+'</td><td>'+esc(x.notes||'—')+'</td><td><button class="btn" data-supplier-edit="'+x.id+'">Edit</button> <button class="btn" data-supplier-delete="'+x.id+'">Delete</button></td></tr>').join('')||'<tr><td colspan="6"><div class="empty">No suppliers added yet.</div></td></tr>';
+ $('attendanceRows').innerHTML=attendanceRecords.map(x=>{const e=employees.find(y=>y.id===x.employee_id);return '<tr><td>'+esc(x.attendance_date)+'</td><td>'+esc(e?.full_name||'Employee')+'</td><td>'+esc(x.status.replace('_',' '))+'</td><td>'+esc(x.check_in||'—')+'</td><td>'+esc(x.check_out||'—')+'</td><td>'+esc(x.notes||'—')+'</td></tr>'}).join('')||'<tr><td colspan="6"><div class="empty">No attendance recorded yet.</div></td></tr>';
+ $('leaveRows').innerHTML=leaveRequests.map(x=>{const e=employees.find(y=>y.id===x.employee_id);return '<tr><td>'+esc(e?.full_name||'Employee')+'</td><td>'+esc(x.leave_type)+'</td><td>'+esc(x.start_date)+' – '+esc(x.end_date)+'</td><td>'+esc(x.reason||'—')+'</td><td><span class="badge">'+esc(x.status)+'</span> '+(x.status==='pending'?'<button class="btn" data-leave-status="approved" data-leave-id="'+x.id+'">Approve</button> <button class="btn" data-leave-status="rejected" data-leave-id="'+x.id+'">Reject</button>':'')+'</td></tr>'}).join('')||'<tr><td colspan="5"><div class="empty">No leave requests yet.</div></td></tr>';
+ $('auditRows').innerHTML=auditRecords.map(x=>'<tr><td>'+esc(new Date(x.changed_at).toLocaleString())+'</td><td>'+esc(x.table_name.replace('_',' '))+'</td><td><span class="badge">'+esc(x.action)+'</span></td><td>'+esc(x.record_id||'—')+'</td><td>'+esc(x.action==='DELETE'?'Record deleted':x.action==='INSERT'?'Record created':'Record updated')+'</td></tr>').join('')||'<tr><td colspan="5"><div class="empty">No activity logged yet.</div></td></tr>';
+}
+function addSupplierForm(initial={}){
+ const html=field('Supplier / company name','name')+field('Phone','phone','tel',false)+field('Email','email','email',false)+field('Address','address','text',false)+field('Notes','notes','text',false);
+ openModal(initial.id?'Edit supplier':'Add supplier',html,async o=>{
+  const payload={user_id:currentUser.id,name:o.name.trim(),phone:o.phone||null,email:o.email||null,address:o.address||null,notes:o.notes||null};
+  const q=initial.id?sb.from('suppliers').update(payload).eq('id',initial.id).eq('user_id',currentUser.id):sb.from('suppliers').insert(payload);
+  const {error}=await q;if(error){alert('Could not save supplier: '+error.message);return;}await loadOperations();
+ },initial);
+}
+$('addSupplier').onclick=()=>addSupplierForm();
+$('supplierRows').addEventListener('click',async e=>{
+ const edit=e.target.closest('[data-supplier-edit]'),del=e.target.closest('[data-supplier-delete]');
+ if(edit){const x=suppliers.find(v=>v.id===edit.dataset.supplierEdit);if(x)addSupplierForm(x);}
+ if(del&&confirm('Delete this supplier contact? This does not delete supplier bills or transactions.')){const {error}=await sb.from('suppliers').delete().eq('id',del.dataset.supplierDelete).eq('user_id',currentUser.id);if(error)alert(error.message);else await loadOperations();}
+});
+$('markAttendance').onclick=()=>{
+ if(!employees.length){alert('Add employees first.');return;}
+ const html=select('Employee','employee_id',employees.filter(x=>x.is_active).map(x=>({label:x.full_name,value:x.id})).map(x=>x.label+'|'+x.value).map(x=>x));
+ openModal('Mark attendance',field('Attendance date','attendance_date','date',true,'value="'+today()+'"')+select('Employee','employee_id',employees.filter(x=>x.is_active).map(x=>x.full_name+'|'+x.id))+select('Status','status',['present','absent','late','half_day','leave'])+field('Check-in time','check_in','time',false)+field('Check-out time','check_out','time',false)+field('Notes','notes','text',false),async o=>{
+  const {error}=await sb.from('attendance_records').upsert({user_id:currentUser.id,employee_id:o.employee_id,attendance_date:o.attendance_date,status:o.status,check_in:o.check_in||null,check_out:o.check_out||null,notes:o.notes||null},{onConflict:'user_id,employee_id,attendance_date'});
+  if(error)alert('Could not save attendance: '+error.message);else await loadOperations();
+ });
+};
+$('addLeave').onclick=()=>{
+ if(!employees.length){alert('Add employees first.');return;}
+ openModal('Add leave request',select('Employee','employee_id',employees.map(x=>x.full_name+'|'+x.id))+select('Leave type','leave_type',['Annual','Sick','Maternity','Paternity','Unpaid','Other'])+field('Start date','start_date','date',true,'value="'+today()+'"')+field('End date','end_date','date',true,'value="'+today()+'"')+field('Reason','reason','text',false),async o=>{
+  const {error}=await sb.from('leave_requests').insert({user_id:currentUser.id,employee_id:o.employee_id,leave_type:o.leave_type,start_date:o.start_date,end_date:o.end_date,reason:o.reason||null});
+  if(error)alert('Could not save leave request: '+error.message);else await loadOperations();
+ });
+};
+$('leaveRows').addEventListener('click',async e=>{
+ const b=e.target.closest('[data-leave-status]');if(!b)return;
+ const {error}=await sb.from('leave_requests').update({status:b.dataset.leaveStatus,reviewed_at:new Date().toISOString()}).eq('id',b.dataset.leaveId).eq('user_id',currentUser.id).eq('status','pending');
+ if(error)alert('Could not update request: '+error.message);else await loadOperations();
+});
+$('refreshAudit').onclick=loadOperations;
+
 async function loadPayroll(){
  if(!currentUser)return;
  const [er,pr]=await Promise.all([
@@ -618,6 +677,7 @@ async function activateUser(user){
   document.getElementById('authGate').style.display='none';document.getElementById('appShell').style.display='grid';
   await loadCloudData();
   await loadAccounting();
+  await loadOperations();
  })();
  try{await activationPromise;}finally{activationPromise=null;}
 }
