@@ -558,7 +558,7 @@ body{background:radial-gradient(ellipse at 70% -18%,rgba(44,103,190,.25),transpa
 </section>
 <section class="view" id="suppliers"><div class="section-head"><div><h2>Suppliers</h2><p>Keep supplier contacts and purchase relationships in one place.</p></div><button class="btn primary" id="addSupplier">＋ Add supplier</button></div><div class="card table-card"><div class="table-wrap"><table><thead><tr><th>Supplier</th><th>Phone</th><th>Email</th><th>Address</th><th>Notes</th><th>Actions</th></tr></thead><tbody id="supplierRows"></tbody></table></div></div></section>
 <section class="view" id="audit"><div class="section-head"><div><h2>Business activity log</h2><p>Review changes to key business records, including who owns the records and when the change happened.</p></div><button class="btn" id="refreshAudit">↻ Refresh</button></div><div class="card table-card"><div class="table-wrap"><table><thead><tr><th>When</th><th>Area</th><th>Action</th><th>Record</th><th>Details</th></tr></thead><tbody id="auditRows"></tbody></table></div></div><p class="statement-note">The activity log is append-only through the application. It records changes made to supported business tables; it does not reconstruct older activity from before logging was enabled.</p></section>
-<section class="view" id="settings"><div class="section-head"><div><h2>Business profile</h2><p>Manage your business identity and contact details.</p></div></div><div class="card"><form id="profileForm"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px"><div class="field"><label>Business name</label><input id="profileName" required maxlength="100"></div><div class="field"><label>Country</label><select id="profileCountry" required></select></div><div class="field"><label>Display currency</label><select id="profileCurrency" required></select></div><div class="field"><label>Business phone</label><input id="profilePhone" type="tel"></div><div class="field"><label>Business email</label><input id="profileEmail" type="email"></div></div><div class="brand-upload"><div class="brand-upload-preview"><img id="businessLogoPreview" alt="Business logo preview" hidden><span id="businessLogoPlaceholder">LOGO</span></div><div class="brand-upload-copy"><b>Business logo</b><small>Upload a square PNG, JPG or WebP logo. It will appear on reports and printed documents on this device.</small><div class="brand-upload-actions"><label class="btn" for="businessLogoFile">Choose logo</label><button class="btn danger" id="removeBusinessLogo" type="button">Remove</button></div><input id="businessLogoFile" type="file" accept="image/png,image/jpeg,image/webp" hidden><div id="businessLogoMessage" class="brand-upload-message"></div></div></div><div class="form-actions"><button class="btn primary">Save business profile</button></div><div id="profileMessage" style="font-size:12px;color:var(--muted);margin-top:10px"></div></form></div></section>
+<section class="view" id="settings"><div class="section-head"><div><h2>Business profile</h2><p>Manage your business identity and contact details.</p></div></div><div class="card"><form id="profileForm"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px"><div class="field"><label>Business name</label><input id="profileName" required maxlength="100"></div><div class="field"><label>Country</label><select id="profileCountry" required></select></div><div class="field"><label>Display currency</label><select id="profileCurrency" required></select></div><div class="field"><label>Business phone</label><input id="profilePhone" type="tel"></div><div class="field"><label>Business email</label><input id="profileEmail" type="email"></div></div><div class="brand-upload"><div class="brand-upload-preview"><img id="businessLogoPreview" alt="Business logo preview" hidden><span id="businessLogoPlaceholder">LOGO</span></div><div class="brand-upload-copy"><b>Business logo</b><small>Upload a square PNG, JPG or WebP logo. It will appear on reports and printed documents on this device.</small><div class="brand-upload-actions"><label class="btn" for="businessLogoFile">Choose logo</label><button class="btn danger" id="removeBusinessLogo" type="button">Remove</button></div><input id="businessLogoFile" type="file" accept="image/png,image/jpeg,image/webp" hidden><div id="businessLogoMessage" class="brand-upload-message"></div></div></div><div class="form-actions"><button class="btn primary">Save business profile</button></div><div id="profileMessage" style="font-size:12px;color:var(--muted);margin-top:10px"></div></form></div><article class="card" style="margin-top:16px"><div class="section-head"><div><h2>Data backup & recovery</h2><p>Download a copy of your business records or merge records from a previous BridanX backup.</p></div></div><div class="toolbar"><button class="btn primary" id="bxDownloadBackup" type="button">↓ Download data backup</button><button class="btn" id="bxChooseBackup" type="button">↑ Restore from backup</button><input id="bxBackupFile" type="file" accept=".json,application/json" hidden></div><p id="bxBackupStatus" class="statement-note" aria-live="polite">Backups include transactions, sales, inventory, customers and customer debts. Restoring merges records and does not delete existing data.</p></article></div></section>
 <section class="view" id="plans">
  <div class="section-head"><div><h2>Plans & subscription</h2><p>Choose the tools that match the way your business operates.</p></div></div>
  <div class="notice" style="margin-bottom:18px">Payments are checked manually before a paid plan is confirmed. Keep your PesaJet transaction reference after paying.</div>
@@ -1477,6 +1477,44 @@ async function saveBusinessProfile(){
  businessProfile={...businessProfile,...payload};setBusinessHeader(payload.business_name);currencyCode=payload.currency_code;businessProfile={...businessProfile,...payload};localStorage.setItem(CURRENCY_KEY,currencyCode);currencySelect.value=currencyCode;updateCurrencyLabels();render();message.textContent='Business profile saved successfully.';
 }
 document.getElementById('profileForm').addEventListener('submit',async e=>{e.preventDefault();await saveBusinessProfile()});
+
+document.getElementById('bxDownloadBackup').onclick=()=>{
+ const backup={app:'BridanX Business Manager',version:1,created_at:new Date().toISOString(),business_name:businessProfile.business_name||'My Business',data:normalizeBusinessData(data)};
+ const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='bridanx-business-backup-'+new Date().toISOString().slice(0,10)+'.json';
+ document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+ document.getElementById('bxBackupStatus').textContent='Backup downloaded. Keep the JSON file somewhere safe; it contains your business records.';
+};
+document.getElementById('bxChooseBackup').onclick=()=>document.getElementById('bxBackupFile').click();
+document.getElementById('bxBackupFile').addEventListener('change',async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ const status=document.getElementById('bxBackupStatus');
+ try{
+  if(file.size>10*1024*1024)throw new Error('The backup file is larger than 10 MB.');
+  const parsed=JSON.parse(await file.text());
+  if(parsed?.app!=='BridanX Business Manager'||parsed?.version!==1||!parsed?.data||typeof parsed.data!=='object')throw new Error('This is not a supported BridanX Business Manager backup.');
+  const restored=normalizeBusinessData(parsed.data),keys=['transactions','sales','products','customers','debts'];
+  const counts=keys.map(k=>(restored[k]||[]).length);
+  if(!counts.some(Boolean))throw new Error('The backup contains no business records to restore.');
+  if(!confirm('Restore and merge this backup?\n\nTransactions: '+counts[0]+'\nSales: '+counts[1]+'\nInventory items: '+counts[2]+'\nCustomers: '+counts[3]+'\nCustomer debts: '+counts[4]+'\n\nExisting records will not be deleted.'))return;
+  let added=0;
+  for(const key of keys){
+   const existing=data[key],ids=new Set(existing.map(x=>String(x.id||'')).filter(Boolean));
+   const fingerprints=new Set(existing.map(x=>JSON.stringify(Object.fromEntries(Object.entries(x).filter(([k])=>k!=='id')))));
+   for(const source of restored[key]){
+    const item={...source};if(!item.id)item.id=uid();
+    const fingerprint=JSON.stringify(Object.fromEntries(Object.entries(item).filter(([k])=>k!=='id')));
+    if(ids.has(String(item.id))||fingerprints.has(fingerprint))continue;
+    existing.push(item);ids.add(String(item.id));fingerprints.add(fingerprint);added++;
+   }
+  }
+  save();
+  status.textContent='Restore complete: '+added+' new record(s) merged. Existing records were kept. Cloud sync will continue in the background when connected.';
+ }catch(error){status.textContent='Could not restore backup: '+(error?.message||'Please choose a valid backup file.');}
+ finally{e.target.value='';}
+});
+
 function rowWithId(x){return {...x,id:x.id||uid()}}
 async function loadCloudData(){
  if(!currentUser)return;
