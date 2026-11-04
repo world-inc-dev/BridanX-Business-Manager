@@ -92,7 +92,7 @@ function render(){
  $('totalIncome').textContent=money(inc);$('totalExpenses').textContent=money(exp);$('netProfit').textContent=money(profit);$('customerCount').textContent=data.customers.length;
  $('reportIncome').textContent=money(inc);$('reportExpenses').textContent=money(exp);$('reportProfit').textContent=money(profit);$('reportStock').textContent=money(data.products.reduce((a,p)=>a+Number(p.qty)*Number(p.price),0));
  const sorted=[...data.transactions].sort((a,b)=>b.date.localeCompare(a.date));
- const row=x=>'<tr><td>'+esc(x.description)+'</td><td>'+esc(x.category)+'</td><td><span class="badge '+(x.type==='Expense'?'expense':'')+'">'+esc(x.type)+'</span></td><td>'+esc(x.date)+'</td><td>'+money(x.amount)+'</td><td><div class="row-actions"><button class="btn" data-edit="transactions" data-id="'+esc(x.id||'')+'">Edit</button><button class="btn danger" data-delete="transactions" data-id="'+esc(x.id||'')+'">Delete</button></div></td></tr>;
+ const row=x=>'<tr><td>'+esc(x.description)+'</td><td>'+esc(x.category)+'</td><td><span class="badge '+(x.type==='Expense'?'expense':'')+'">'+esc(x.type)+'</span></td><td>'+esc(x.date)+'</td><td>'+money(x.amount)+'</td><td><div class="row-actions"><button class="btn" data-edit="transactions" data-id="'+esc(x.id||'')+'">Edit</button><button class="btn danger" data-delete="transactions" data-id="'+esc(x.id||'')+'">Delete</button></div></td></tr>';
  $('recentRows').innerHTML=sorted.slice(0,5).map(row).join('')||empty;
  const q=($('transactionSearch')?.value||'').toLowerCase();
  $('transactionRows').innerHTML=sorted.filter(x=>(x.description+' '+x.category+' '+x.type).toLowerCase().includes(q)).map(row).join('')||empty;
