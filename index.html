@@ -1022,11 +1022,24 @@ const workTypeConfig={
  hospitality:{heading:'Guest & room operations',intro:'Track guest bookings, room turns and service requests.',type:'Guest booking / request',title:'Room / guest request',party:'Guest name',reference:'Room / booking reference'},
  construction:{heading:'Projects & site tasks',intro:'Track project milestones, site activities and client follow-ups.',type:'Project / site task',title:'Project or work item',party:'Client / site contact',reference:'Project / site reference'}
 };
+const categoryWorkFields={
+ supermarket:[{label:'Department / category',name:'department'},{label:'Barcode / SKU',name:'barcode'},{label:'Quantity',name:'quantity',type:'number'},{label:'Expiry date',name:'expiry_date',type:'date'},{label:'Task type',name:'task_type',options:['Supplier order','Goods received','Shelf replenishment','Expiry check','Stock count','Price update','Store maintenance','Other']}],
+ retail:[{label:'Product category',name:'department'},{label:'SKU / barcode',name:'barcode'},{label:'Quantity',name:'quantity',type:'number'},{label:'Task type',name:'task_type',options:['Supplier order','Stock received','Shelf replenishment','Stock count','Price update','Other']}],
+ restaurant:[{label:'Table / order number',name:'table_number'},{label:'Number of guests',name:'covers',type:'number'},{label:'Order channel',name:'order_channel',options:['Dine-in','Takeaway','Delivery','Catering','Reservation']},{label:'Service time',name:'service_time',type:'time'},{label:'Kitchen status',name:'kitchen_status',options:['Not started','Preparing','Ready','Served','Cancelled']}],
+ pharmacy:[{label:'Medicine category',name:'medicine_category'},{label:'Batch / lot number',name:'batch_number'},{label:'Expiry date',name:'expiry_date',type:'date'},{label:'Supplier reference',name:'purchase_reference'},{label:'Task type',name:'task_type',options:['Stock received','Expiry check','Stock count','Supplier order','Customer collection','Other']}],
+ agent:[{label:'Network',name:'network',options:['MTN','Airtel','Other']},{label:'Opening cash float',name:'opening_float',type:'number'},{label:'Opening e-float',name:'opening_efloat',type:'number'},{label:'Closing cash float',name:'closing_float',type:'number'},{label:'Closing e-float',name:'closing_efloat',type:'number'},{label:'Task type',name:'task_type',options:['Daily float opening','Daily float closing','Cash reconciliation','Provider issue','Other']}],
+ services:[{label:'Service category',name:'job_category'},{label:'Assigned staff',name:'assigned_to'},{label:'Start date',name:'start_date',type:'date'},{label:'Due date',name:'due_date',type:'date'},{label:'Deliverable / scope',name:'deliverable'}],
+ manufacturing:[{label:'Production batch number',name:'batch_number'},{label:'Product being made',name:'product_name'},{label:'Planned quantity',name:'planned_quantity',type:'number'},{label:'Quantity produced',name:'produced_quantity',type:'number'},{label:'Rejected / waste quantity',name:'rejected_quantity',type:'number'},{label:'Quality check',name:'quality_status',options:['Pending','Passed','Failed','Rework required']}],
+ agriculture:[{label:'Farm / plot',name:'farm_plot'},{label:'Crop / livestock',name:'crop_livestock'},{label:'Season / cycle',name:'season'},{label:'Farm activity',name:'farm_activity',options:['Land preparation','Planting','Weeding','Fertilising','Spraying','Feeding','Veterinary care','Harvesting','Storage','Other']},{label:'Harvest quantity',name:'harvest_quantity',type:'number'},{label:'Assigned worker',name:'assigned_to'}],
+ hospitality:[{label:'Room / unit number',name:'room_number'},{label:'Check-in date',name:'check_in',type:'date'},{label:'Check-out date',name:'check_out',type:'date'},{label:'Number of guests',name:'guest_count',type:'number'},{label:'Booking source',name:'booking_source',options:['Walk-in','Phone','Website','Travel agent','Online travel agency','Other']},{label:'Housekeeping status',name:'housekeeping_status',options:['Not started','In progress','Ready','Needs attention']}],
+ construction:[{label:'Project / site name',name:'site_name'},{label:'Project phase',name:'project_phase'},{label:'Site supervisor',name:'site_supervisor'},{label:'Contractor',name:'contractor'},{label:'Planned start',name:'start_date',type:'date'},{label:'Target completion',name:'due_date',type:'date'},{label:'Materials / work scope',name:'work_scope'}]
+};
 function workDetailSummary(x){
  const d=x.details||{};
  if(x.business_type==='school')return 'Class: '+(d.class_name||'—')+' · Term: '+(d.academic_term||'—')+' · Paid: '+money(d.fees_paid||0)+' · Balance: '+money(Math.max(0,Number(x.amount||0)-Number(d.fees_paid||0)));
  if(x.business_type==='salon')return 'Time: '+(d.appointment_time||'—')+' · Stylist: '+(d.stylist||'—')+' · Duration: '+(d.duration_minutes||'—')+' min';
  if(x.business_type==='transport')return (d.origin||'—')+' → '+(d.destination||'—')+' · Driver: '+(d.driver||'—')+' · Vehicle: '+(d.vehicle||'—');
+ const extraFields=categoryWorkFields[x.business_type]||[];if(extraFields.length)return extraFields.map(f=>{const v=d[f.name];return v!==undefined&&v!==null&&String(v)!==''?f.label+': '+v:''}).filter(Boolean).join(' · ');
  return d.notes||'';
 }
 function renderWorkItems(){
@@ -1054,6 +1067,7 @@ function renderWorkItems(){
 function openWorkItem(existing={}){
  const cfg=workTypeConfig[businessType]||workTypeConfig.general,d=existing.details||{};
  let special='',extraInitial={};
+ const extras=categoryWorkFields[businessType]||[];if(extras.length){special=extras.map(f=>f.options?select(f.label,f.name,f.options):field(f.label,f.name,f.type||'text',false)).join('');extraInitial=Object.fromEntries(extras.map(f=>[f.name,(d[f.name]??'')]));}
  if(businessType==='school'){
   special=field('Admission number','admission_number','text',false)+field('Class / year','class_name','text',true)+field('Academic term','academic_term','text',false)+field('Total fees ('+currencyCode+')','amount','number',false,'min="0" step="0.01" value="0"')+field('Fees paid ('+currencyCode+')','fees_paid','number',false,'min="0" step="0.01" value="0"');
   extraInitial={admission_number:d.admission_number||'',class_name:d.class_name||'',academic_term:d.academic_term||'',fees_paid:d.fees_paid??'0'};
@@ -1072,6 +1086,7 @@ function openWorkItem(existing={}){
   if(businessType==='school'&&!o.class_name?.trim()){alert('Enter the student class or year.');return;}
   if(businessType==='transport'&&(!o.origin?.trim()||!o.destination?.trim())){alert('Enter both the pickup point and destination.');return;}
   const details={notes:o.notes||''};
+  extras.forEach(f=>{const v=o[f.name];details[f.name]=f.type==='number'?Number(v||0):(v||'');});
   if(businessType==='school')Object.assign(details,{admission_number:o.admission_number||'',class_name:o.class_name||'',academic_term:o.academic_term||'',fees_paid:Number(o.fees_paid||0)});
   if(businessType==='salon')Object.assign(details,{appointment_time:o.appointment_time||'',stylist:o.stylist||'',duration_minutes:Number(o.duration_minutes||0)});
   if(businessType==='transport')Object.assign(details,{origin:o.origin||'',destination:o.destination||'',driver:o.driver||'',vehicle:o.vehicle||'',distance_km:Number(o.distance_km||0)});
