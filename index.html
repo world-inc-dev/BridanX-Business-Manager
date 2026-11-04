@@ -1127,6 +1127,18 @@ function workDetailSummary(x){
  const extraFields=categoryWorkFields[x.business_type]||[];if(extraFields.length)return extraFields.map(f=>{const v=d[f.name];return v!==undefined&&v!==null&&String(v)!==''?f.label+': '+v:''}).filter(Boolean).join(' · ');
  return d.notes||'';
 }
+function printWorkRecord(id){
+ const x=(data.workItems||[]).find(r=>String(r.id)===String(id));if(!x){alert('Operations record not found.');return;}
+ const d=x.details||{},fields=categoryWorkFields[x.business_type]||[],pairs=[];
+ fields.forEach(f=>{const v=d[f.name];if(v!==undefined&&v!==null&&String(v)!=='')pairs.push([f.label,String(v)]);});
+ if(x.business_type==='salon')pairs.push(['Appointment time',d.appointment_time||''],['Stylist',d.stylist||''],['Chair / station',d.chair||''],['Duration',d.duration_minutes?d.duration_minutes+' minutes':''],['Appointment status',d.appointment_status||'']);
+ if(x.business_type==='transport')pairs.push(['Pickup / origin',d.origin||''],['Destination',d.destination||''],['Trip type',d.trip_type||''],['Driver',d.driver||''],['Vehicle',d.vehicle||''],['Distance',d.distance_km?d.distance_km+' km':''],['Fuel',d.fuel_litres?d.fuel_litres+' litres':'']);
+ if(x.business_type==='school')pairs.push(['Admission number',d.admission_number||''],['Class / year',d.class_name||''],['Academic term',d.academic_term||''],['Fees paid',money(d.fees_paid||0)]);
+ pairs.push(['Status',String(x.status||'open').replace('_',' ')],['Date',x.scheduled_date||''],['Amount',money(x.amount||0)],['Reference',x.reference||''],['Notes',d.notes||'']);
+ const rows=pairs.filter(p=>p[1]!==''&&p[1]!==null&&p[1]!==undefined).map(p=>'<tr><th>'+esc(p[0])+'</th><td>'+esc(p[1])+'</td></tr>').join('');
+ const w=window.open('','_blank','width=760,height=760');if(!w){alert('Please allow pop-ups to print this record.');return;}
+ w.document.open();w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(x.title)+'</title><style>body{font:14px Arial,sans-serif;color:#17212b;padding:28px;max-width:760px;margin:auto}h1{font-size:22px;margin:0 0 4px}.muted{color:#667085;font-size:12px}.rule{border:0;border-top:1px solid #ccd3da;margin:18px 0}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{text-align:left;padding:10px;border-bottom:1px solid #e1e5e9;vertical-align:top}th{width:32%;color:#56616e}footer{text-align:center;margin-top:28px;color:#667085;font-size:11px}@media print{body{padding:0}}</style></head><body><h1>'+esc(x.title)+'</h1><div class="muted">'+esc(String(x.record_type||'Business record'))+' · '+esc(String(x.business_type||businessType))+'</div><hr class="rule"><table>'+rows+'</table><footer>BridanX Business Manager · Business operations record</footer></body></html>');w.document.close();setTimeout(()=>{w.focus();w.print()},300);
+}
 function renderWorkItems(){
  renderCategoryOperationsPanel();
  const cfg=workTypeConfig[businessType]||workTypeConfig.general,rows=(data.workItems||[]).filter(x=>!x.business_type||x.business_type===businessType);
@@ -1148,7 +1160,7 @@ function renderWorkItems(){
   if(valueLabel)valueLabel.textContent='Recorded value';
   $('workValueTotal').textContent=money(rows.reduce((n,x)=>n+Number(x.amount||0),0));
  }
- $('workItemsRows').innerHTML=rows.map(x=>'<tr><td>'+esc(x.record_type)+'</td><td><b>'+esc(x.title)+'</b>'+(workDetailSummary(x)?'<br><small>'+esc(workDetailSummary(x))+'</small>':'')+'</td><td>'+esc(x.party_name||'—')+(x.reference?'<br><small>'+esc(x.reference)+'</small>':'')+'</td><td>'+esc(x.scheduled_date||'—')+'</td><td>'+money(x.amount||0)+'</td><td><span class="badge">'+esc(String(x.status||'open').replace('_',' '))+'</span></td><td><button class="btn" data-work-edit="'+esc(x.id)+'">Edit</button> <button class="btn" data-work-next="'+esc(x.id)+'">Next status</button> <button class="btn danger" data-work-delete="'+esc(x.id)+'">Delete</button></td></tr>').join('')||'<tr><td colspan="7"><div class="empty">No records yet. Add your first '+esc(cfg.type.toLowerCase())+'.</div></td></tr>';
+ $('workItemsRows').innerHTML=rows.map(x=>'<tr><td>'+esc(x.record_type)+'</td><td><b>'+esc(x.title)+'</b>'+(workDetailSummary(x)?'<br><small>'+esc(workDetailSummary(x))+'</small>':'')+'</td><td>'+esc(x.party_name||'—')+(x.reference?'<br><small>'+esc(x.reference)+'</small>':'')+'</td><td>'+esc(x.scheduled_date||'—')+'</td><td>'+money(x.amount||0)+'</td><td><span class="badge">'+esc(String(x.status||'open').replace('_',' '))+'</span></td><td><button class="btn" data-work-print="'+esc(x.id)+'">Print</button> <button class="btn" data-work-edit="'+esc(x.id)+'">Edit</button> <button class="btn" data-work-next="'+esc(x.id)+'">Next status</button> <button class="btn danger" data-work-delete="'+esc(x.id)+'">Delete</button></td></tr>').join('')||'<tr><td colspan="7"><div class="empty">No records yet. Add your first '+esc(cfg.type.toLowerCase())+'.</div></td></tr>';
 }
 function openWorkItem(existing={}){
  const cfg=workTypeConfig[businessType]||workTypeConfig.general,d=existing.details||{};
@@ -1202,6 +1214,7 @@ function openWorkItem(existing={}){
 }
 $('addWorkItem').onclick=()=>openWorkItem();
 $('workItemsRows').addEventListener('click',async e=>{
+ const print=e.target.closest('[data-work-print]');if(print){printWorkRecord(print.dataset.workPrint);return;}
  const edit=e.target.closest('[data-work-edit]'),next=e.target.closest('[data-work-next]'),del=e.target.closest('[data-work-delete]');
  if(edit){const item=(data.workItems||[]).find(x=>String(x.id)===edit.dataset.workEdit);if(item)openWorkItem(item);}
  if(next){const item=data.workItems.find(x=>String(x.id)===next.dataset.workNext);if(item){item.status=item.status==='open'?'in_progress':item.status==='in_progress'?'completed':'open';try{await pushWorkItems([item]);renderWorkItems();save();}catch(error){alert('Could not update status: '+error.message);}}}
