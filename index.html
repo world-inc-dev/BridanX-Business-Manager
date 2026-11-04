@@ -230,6 +230,41 @@ body{background:radial-gradient(ellipse at 70% -18%,rgba(44,103,190,.25),transpa
 </style>
 <style>
 #authGate.welcome-gate{display:block;overflow-y:auto;align-items:stretch;padding:0;background:radial-gradient(ellipse at 70% 5%,#1b438055,transparent 38%),#050d1b}.welcome-layout{display:block;width:100%;max-width:none}.welcome-intro{min-height:0;max-width:1240px;margin:auto;padding:26px clamp(20px,6vw,80px)}.welcome-copy{padding:45px 0 28px}.welcome-copy h1 em{background:linear-gradient(95deg,#68caff,#a18bff);background-clip:text;-webkit-background-clip:text;color:transparent}.welcome-dashboard-preview{max-width:760px;margin:25px auto 20px;box-shadow:0 25px 75px #0009,0 0 60px #398bff22;transform:perspective(900px) rotateY(-2deg)}.welcome-auth[hidden],.welcome-intro[hidden]{display:none!important}.welcome-auth{max-width:480px;margin:70px auto!important}.welcome-layout.auth-mode{min-height:100vh;display:grid;place-items:center;padding:25px}.bx-public-nav{position:sticky;top:0;z-index:5;display:flex;justify-content:center;align-items:center;gap:clamp(12px,3vw,35px);flex-wrap:wrap;padding:14px 18px;background:#09172bed;border-block:1px solid #29436a88;backdrop-filter:blur(16px)}.bx-public-nav a{font-size:11px;color:#afc5e5;text-decoration:none}.bx-public-section{max-width:1180px;margin:auto;padding:75px clamp(20px,6vw,75px)}.bx-public-section h2{font-size:clamp(28px,4vw,43px);letter-spacing:-1.2px;margin:12px 0}.bx-public-section h2 em{font-style:normal;color:#79caff}.bx-public-section>p{max-width:750px;color:#a4b7d4;font-size:13px;line-height:1.8}.bx-info-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-top:26px}.bx-info-grid article{padding:20px;border:1px solid #29466e;border-radius:14px;background:linear-gradient(145deg,#112747,#0a1931);box-shadow:0 12px 30px #0002}.bx-info-grid b{font-size:13px;color:#eaf4ff}.bx-info-grid p{font-size:10px;line-height:1.8;color:#9bb0cf}.bx-info-grid small{font-size:8px;color:#83b9ec;letter-spacing:1px}.bx-alt{max-width:none;background:#09162a;border-block:1px solid #203657}.bx-alt>*{max-width:1030px;margin-left:auto;margin-right:auto}.bx-feature-grid{grid-template-columns:repeat(4,1fr)}.bx-voices{grid-template-columns:repeat(3,1fr)}.bx-support{display:flex;align-items:center;justify-content:space-between;gap:25px}.bx-support p{max-width:720px;color:#9bb0cf;font-size:12px;line-height:1.8}.bx-public-footer{padding:22px;text-align:center;border-top:1px solid #203657;color:#829bbf;font-size:10px;background:#071327}.welcome-cta-row{margin-top:25px}.welcome-get-started{padding:13px 22px;box-shadow:0 10px 30px #428ff044}.welcome-points{margin-top:28px}.welcome-copy>p{max-width:700px}.welcome-dashboard-preview .preview-kpis>div{background:linear-gradient(145deg,#152f56,#0b1c37);border-color:#34547f}.welcome-dashboard-preview .preview-chart{background:#091a34;border-color:#34547f}
+/* Rich circular analytics preview for the public landing page */
+.welcome-dashboard-preview{max-width:900px!important;padding:17px!important;border-color:#34547f!important;background:linear-gradient(145deg,rgba(19,42,78,.96),rgba(7,20,43,.98))!important}
+.preview-analytics-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(220px,.85fr);gap:12px;margin-top:13px}
+.preview-kpi-stack,.preview-circles{min-width:0}
+.preview-metric{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:2px 0 10px}
+.preview-metric small{font-size:8px;letter-spacing:1.2px;color:#8eacd5;font-weight:800}
+.preview-metric>b{font-size:11px;color:#e9f4ff}
+.preview-pill{margin-left:auto;padding:4px 7px;border:1px solid #385b8c;border-radius:20px;color:#91bfff;font-size:7px;letter-spacing:.8px}
+.preview-kpis{margin:0 0 10px}
+.preview-kpis>div{min-width:0}
+.preview-kpis b{font-size:20px}
+.preview-circles{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.preview-ring-card{display:grid;justify-items:center;align-content:start;gap:5px;padding:11px 7px;border:1px solid #2a456f;border-radius:12px;background:linear-gradient(145deg,#12294d,#0a1b37);text-align:center}
+.preview-ring{width:88px;height:88px;display:grid;place-items:center;border-radius:50%;position:relative;filter:drop-shadow(0 0 13px #5baaff22)}
+.preview-ring:before{content:"";position:absolute;inset:9px;border-radius:50%;background:#0b1d39;border:1px solid #29456f}
+.revenue-ring{background:conic-gradient(#6bbcff 0 39%,#9b87ff 39% 68%,#40d8bd 68% 88%,#344e78 88% 100%)}
+.activity-ring{background:conic-gradient(#9b87ff 0 40%,#4bd8b5 40% 68%,#6bbcff 68% 86%,#344e78 86% 100%)}
+.preview-ring-card span{position:relative;z-index:1;display:grid;gap:1px}
+.preview-ring-card span b{font-size:16px;color:#f0f6ff}
+.preview-ring-card span small{font-size:7px;line-height:1.3;color:#9db5d9}
+.preview-ring-card>b{font-size:8px;color:#e4efff}
+.preview-ring-card>small{font-size:7px;color:#8ca6ce}
+.preview-radials{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:10px 7px;border:1px solid #2a456f;border-radius:12px;background:#0b1b35}
+.radial-item{display:grid;justify-items:center;gap:4px}
+.radial-gauge{width:43px;height:43px;border-radius:50%;display:grid;place-items:center;position:relative}
+.radial-gauge:before{content:"";position:absolute;inset:5px;border-radius:50%;background:#0b1b35}
+.radial-gauge span{position:relative;font-size:10px;font-weight:800;color:#edf5ff}
+.gauge-blue{background:conic-gradient(#65baff 0 76%,#29466e 76% 100%)}
+.gauge-purple{background:conic-gradient(#a18bff 0 62%,#29466e 62% 100%)}
+.gauge-teal{background:conic-gradient(#42d8b7 0 84%,#29466e 84% 100%)}
+.radial-item>small{font-size:7px;color:#91a9cd}
+.preview-disclaimer{margin-top:10px;text-align:right;color:#7894bc;font-size:8px;line-height:1.5}
+@media(max-width:620px){.preview-analytics-grid{grid-template-columns:1fr}.preview-circles{grid-template-columns:1fr 1fr}.preview-ring{width:78px;height:78px}.preview-disclaimer{text-align:left}}
+@media(max-width:380px){.preview-kpis{grid-template-columns:1fr}.preview-kpis>div{display:flex;align-items:center;gap:8px}.preview-kpis b{margin:0}.preview-kpis .preview-line{display:none}}
+
 @media(max-width:850px){.bx-info-grid,.bx-feature-grid{grid-template-columns:repeat(2,1fr)}.bx-voices{grid-template-columns:1fr}.welcome-dashboard-preview{transform:none}}
 @media(max-width:520px){.bx-public-nav{gap:12px}.bx-public-nav a{font-size:9px}.bx-public-section{padding:55px 18px}.bx-info-grid,.bx-feature-grid,.bx-voices{grid-template-columns:1fr}.bx-support{align-items:flex-start;flex-direction:column}.welcome-intro{padding:20px 18px}.welcome-copy{padding:28px 0}.welcome-copy h1{font-size:clamp(36px,10vw,49px)}}
 </style></head>
@@ -277,8 +312,27 @@ body{background:radial-gradient(ellipse at 70% -18%,rgba(44,103,190,.25),transpa
    </div>
    <div class="welcome-dashboard-preview" aria-label="Decorative preview of the BridanX analytics workspace">
     <div class="preview-top"><span><i></i><i></i><i></i></span><b>BUSINESS OVERVIEW</b><small>LIVE WORKSPACE PREVIEW</small></div>
-    <div class="preview-kpis"><div><small>INCOME</small><b>—</b><i class="preview-line"></i></div><div><small>EXPENSES</small><b>—</b><i class="preview-line purple"></i></div><div><small>NET PROFIT</small><b>—</b><i class="preview-line green"></i></div></div>
-    <div class="preview-chart"><div><b>Cash flow</b><small>Performance analytics</small></div><svg viewBox="0 0 520 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="bxPreviewFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#4b9cff" stop-opacity=".34"/><stop offset="1" stop-color="#4b9cff" stop-opacity="0"/></linearGradient></defs><path d="M0 82 C38 77 46 55 85 62 S143 70 176 45 S238 61 270 37 S326 46 362 28 S425 41 460 16 S495 24 520 7 L520 100 L0 100Z" fill="url(#bxPreviewFill)"/><path d="M0 82 C38 77 46 55 85 62 S143 70 176 45 S238 61 270 37 S326 46 362 28 S425 41 460 16 S495 24 520 7" fill="none" stroke="#65b7ff" stroke-width="3" stroke-linecap="round"/></svg></div>
+    <div class="preview-analytics-grid">
+     <div class="preview-kpi-stack">
+      <div class="preview-metric"><small>REVENUE OVERVIEW</small><b>Performance snapshot</b><span class="preview-pill">ILLUSTRATIVE PREVIEW</span></div>
+      <div class="preview-kpis">
+       <div><small>TOTAL REVENUE</small><b>—</b><i class="preview-line"></i></div>
+       <div><small>ACTIVE CUSTOMERS</small><b>—</b><i class="preview-line purple"></i></div>
+       <div><small>NET CASH FLOW</small><b>—</b><i class="preview-line green"></i></div>
+      </div>
+      <div class="preview-chart"><div><b>Cash flow trend</b><small>Monthly performance</small></div><svg viewBox="0 0 520 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="bxPreviewFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#58b8ff" stop-opacity=".34"/><stop offset="1" stop-color="#58b8ff" stop-opacity="0"/></linearGradient></defs><path d="M0 82 C38 77 46 55 85 62 S143 70 176 45 S238 61 270 37 S326 46 362 28 S425 41 460 16 S495 24 520 7 L520 100 L0 100Z" fill="url(#bxPreviewFill)"/><path d="M0 82 C38 77 46 55 85 62 S143 70 176 45 S238 61 270 37 S326 46 362 28 S425 41 460 16 S495 24 520 7" fill="none" stroke="#65b7ff" stroke-width="3" stroke-linecap="round"/></svg></div>
+     </div>
+     <div class="preview-circles">
+      <div class="preview-ring-card"><div class="preview-ring revenue-ring"><span><b>—</b><small>Revenue<br/>mix</small></span></div><b>Revenue by category</b><small>Donut analytics</small></div>
+      <div class="preview-ring-card"><div class="preview-ring activity-ring"><span><b>—</b><small>Business<br/>activity</small></span></div><b>Activity breakdown</b><small>Operational insights</small></div>
+      <div class="preview-radials">
+       <div class="radial-item"><div class="radial-gauge gauge-blue"><span>—</span></div><small>Sales</small></div>
+       <div class="radial-item"><div class="radial-gauge gauge-purple"><span>—</span></div><small>Expenses</small></div>
+       <div class="radial-item"><div class="radial-gauge gauge-teal"><span>—</span></div><small>Stock health</small></div>
+      </div>
+     </div>
+    </div>
+    <div class="preview-disclaimer">Illustrative interface preview · Actual workspace figures come from each account’s saved business records.</div>
    </div>
    <div class="welcome-footer"><span>BRIDANX DIGITAL BUSINESS HUB</span><span>We Build the Digital Future</span></div>
   </section>
