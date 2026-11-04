@@ -207,7 +207,8 @@ const SB_KEY='sb_publishable_xg0I3fVNZCuBLIqnBw-0YA_6yL9QbGC';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
 let authMode='login', currentUser=null, cloudBusy=false, cloudSyncEnabled=true, activationPromise=null;
 
-let accounting={accounts:[],entries:[],lines:[],documents:[]}, accountingRange={from:'',to:''};\nlet employees=[],payrollRecords=[];
+let accounting={accounts:[],entries:[],lines:[],documents:[]}, accountingRange={from:'',to:''};
+let employees=[],payrollRecords=[];
 const defaultAccounts=[
  ['1000','Cash on hand','Asset'],['1010','Bank account','Asset'],['1100','Accounts receivable','Asset'],['1200','Inventory asset','Asset'],['1500','Equipment','Asset'],
  ['2000','Accounts payable','Liability'],['2100','Loans payable','Liability'],['2200','Tax payable','Liability'],
@@ -392,7 +393,7 @@ async function payPayroll(id){
 function printPayslip(id){
  const p=payrollRecords.find(x=>x.id===id),emp=employees.find(x=>x.id===p?.employee_id);if(!p)return;
  const w=window.open('','_blank');if(!w){alert('Allow pop-ups to print the payslip.');return}
- w.document.write('<html><body style="font:14px Arial;margin:40px"><h1>'+esc(businessProfile.business_name||'Business')+'</h1><h2>PAYSLIP</h2><p>Employee: '+esc(emp?.full_name||'')+'</p><p>Role: '+esc(emp?.role_title||'—')+'</p><p>Pay period: '+esc(p.pay_period)+'</p><hr><p>Basic pay: '+money(p.basic_pay)+'</p><p>Allowances: '+money(p.allowances)+'</p><p>Tax deduction: '+money(p.tax_deduction)+'</p><p>Pension deduction: '+money(p.pension_deduction)+'</p><p>Other deductions: '+money(p.other_deductions)+'</p><h3>Net pay: '+money(p.net_pay)+'</h3><p>Status: '+esc(p.payment_status)+'</p><script>window.onload=()=>window.print()<\\/script></body></html>');w.document.close();
+ w.document.write('<html><body style="font:14px Arial;margin:40px"><h1>'+esc(businessProfile.business_name||'Business')+'</h1><h2>PAYSLIP</h2><p>Employee: '+esc(emp?.full_name||'')+'</p><p>Role: '+esc(emp?.role_title||'—')+'</p><p>Pay period: '+esc(p.pay_period)+'</p><hr><p>Basic pay: '+money(p.basic_pay)+'</p><p>Allowances: '+money(p.allowances)+'</p><p>Tax deduction: '+money(p.tax_deduction)+'</p><p>Pension deduction: '+money(p.pension_deduction)+'</p><p>Other deductions: '+money(p.other_deductions)+'</p><h3>Net pay: '+money(p.net_pay)+'</h3><p>Status: '+esc(p.payment_status)+'</p></body></html>');w.document.close();w.print();
 }
 $('addEmployee').onclick=addEmployeeForm;$('addPayroll').onclick=preparePayroll;
 $('printPayroll').onclick=()=>{const w=window.open('','_blank');if(!w)return;w.document.write('<html><body style="font:13px Arial;margin:30px"><h1>Payroll register</h1>'+ $('payrollRows').parentElement.innerHTML+'</body></html>');w.document.close();w.print()};
