@@ -941,19 +941,30 @@ function setAuthMode(mode){
 document.getElementById('showLogin').onclick=()=>setAuthMode('login');
 document.getElementById('showSignup').onclick=()=>setAuthMode('signup');
 document.getElementById('authForm').addEventListener('submit',async e=>{
- e.preventDefault();authMsg.textContent='Please wait…';
- const email=document.getElementById('authEmail').value.trim();
- const password=document.getElementById('authPassword').value;
- let result;const creatingAccount=authMode==='signup';
- if(creatingAccount){
-  result=await sb.auth.signUp({email,password,options:{data:{business_name:document.getElementById('authBusiness').value.trim()||'My Business'}}});
-  if(!result.error)localStorage.setItem('bx_open_plans_after_signup','yes');
-  if(!result.error&&!result.data.session){authMsg.textContent='Account created. Check your email to confirm. After signing in, your subscription plans will open automatically.';return;}
- }else result=await sb.auth.signInWithPassword({email,password});
- if(result.error){authMsg.textContent=result.error.message;return;}
- const openPlans=localStorage.getItem('bx_open_plans_after_signup')==='yes';
- await activateUser(result.data.user,openPlans);
- if(openPlans)localStorage.removeItem('bx_open_plans_after_signup');
+ e.preventDefault();
+ const submit=document.getElementById('authSubmit'),email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value;
+ const creatingAccount=authMode==='signup';submit.disabled=true;submit.textContent=creatingAccount?'Creating account…':'Signing in…';authMsg.textContent='Connecting securely…';
+ try{
+  let result;
+  if(creatingAccount){
+   result=await sb.auth.signUp({email,password,options:{data:{business_name:document.getElementById('authBusiness').value.trim()||'My Business'}}});
+   if(result.error)throw result.error;
+   localStorage.setItem('bx_open_plans_after_signup','yes');
+   if(!result.data.session){authMsg.textContent='Account created. Check your email to confirm, then sign in.';return;}
+  }else{
+   result=await sb.auth.signInWithPassword({email,password});
+   if(result.error)throw result.error;
+  }
+  if(!result.data?.user)throw new Error('Sign-in did not return a user. Please try again.');
+  const openPlans=localStorage.getItem('bx_open_plans_after_signup')==='yes';
+  await activateUser(result.data.user,openPlans);
+  if(openPlans)localStorage.removeItem('bx_open_plans_after_signup');
+ }catch(error){
+  console.error('Authentication / account opening failed:',error);
+  authMsg.textContent=(error?.message||'Unable to sign in. Please check your connection and try again.')+' Your details have been kept so you can retry.';
+ }finally{
+  submit.disabled=false;submit.textContent=creatingAccount?'Create account':'Sign in';
+ }
 });
 document.getElementById('signOutBtn').onclick=async()=>{await sb.auth.signOut();currentUser=null;isPlatformOwner=false;cloudSyncEnabled=true;data=emptyBusinessData();render();document.getElementById('appShell').style.display='none';document.getElementById('authGate').style.display='grid';};
 function setBusinessHeader(name){const el=document.getElementById('signedInBusinessName');if(el){const value=String(name||'My Business').trim()||'My Business';el.textContent=value;el.title=value;}}
@@ -967,12 +978,15 @@ async function activateUser(user,openPlansAfterLogin=false){
   try{data=normalizeBusinessData(JSON.parse(localStorage.getItem(KEY)||'null'));}catch(_){data=emptyBusinessData();}
   currentUser=user;setBusinessHeader(user.user_metadata?.business_name||'My Business');
   document.getElementById('authGate').style.display='none';document.getElementById('appShell').style.display='grid';
-  await loadCloudData();
-  await loadAccounting();
-  await loadPayroll();
-  await loadOperations();
-  await loadMySubscription();
-  await mountPlatformAdmin();
+  const moduleErrors=[];
+  for(const [label,loader] of [['Business records',loadCloudData],['Accounting',loadAccounting],['Payroll',loadPayroll],['Business operations',loadOperations],['Subscription',loadMySubscription],['Platform admin',mountPlatformAdmin]]){
+   try{await loader();}catch(error){console.error(label+' failed to load:',error);moduleErrors.push(label);}
+  }
+  if(moduleErrors.length){
+   let notice=$('loginLoadNotice');
+   if(!notice){notice=document.createElement('div');notice.id='loginLoadNotice';notice.className='notice';notice.style.margin='12px 20px';$('appShell').querySelector('main')?.prepend(notice);}
+   notice.textContent='You are signed in, but some sections could not load ('+moduleErrors.join(', ')+'). Refresh the page or check your connection. Your account remains signed in.';
+  }else $('loginLoadNotice')?.remove();
   if(openPlansAfterLogin){const plansButton=document.querySelector('#nav [data-view="plans"]');if(plansButton)plansButton.click();}
  })();
  try{await activationPromise;}finally{activationPromise=null;}
