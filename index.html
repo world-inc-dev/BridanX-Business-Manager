@@ -424,15 +424,14 @@ $('supplierRows').addEventListener('click',async e=>{
 });
 $('markAttendance').onclick=()=>{
  if(!employees.length){alert('Add employees first.');return;}
- const html=select('Employee','employee_id',employees.filter(x=>x.is_active).map(x=>({label:x.full_name,value:x.id})).map(x=>x.label+'|'+x.value).map(x=>x));
- openModal('Mark attendance',field('Attendance date','attendance_date','date',true,'value="'+today()+'"')+select('Employee','employee_id',employees.filter(x=>x.is_active).map(x=>x.full_name+'|'+x.id))+select('Status','status',['present','absent','late','half_day','leave'])+field('Check-in time','check_in','time',false)+field('Check-out time','check_out','time',false)+field('Notes','notes','text',false),async o=>{
+ openModal('Mark attendance',field('Attendance date','attendance_date','date',true,'value="'+today()+'"')+'<div class="field"><label>Employee</label><select name="employee_id" required>'+employees.filter(x=>x.is_active).map(x=>'<option value="'+x.id+'">'+esc(x.full_name)+'</option>').join('')+'</select></div>'+select('Status','status',['present','absent','late','half_day','leave'])+field('Check-in time','check_in','time',false)+field('Check-out time','check_out','time',false)+field('Notes','notes','text',false),async o=>{
   const {error}=await sb.from('attendance_records').upsert({user_id:currentUser.id,employee_id:o.employee_id,attendance_date:o.attendance_date,status:o.status,check_in:o.check_in||null,check_out:o.check_out||null,notes:o.notes||null},{onConflict:'user_id,employee_id,attendance_date'});
   if(error)alert('Could not save attendance: '+error.message);else await loadOperations();
  });
 };
 $('addLeave').onclick=()=>{
  if(!employees.length){alert('Add employees first.');return;}
- openModal('Add leave request',select('Employee','employee_id',employees.map(x=>x.full_name+'|'+x.id))+select('Leave type','leave_type',['Annual','Sick','Maternity','Paternity','Unpaid','Other'])+field('Start date','start_date','date',true,'value="'+today()+'"')+field('End date','end_date','date',true,'value="'+today()+'"')+field('Reason','reason','text',false),async o=>{
+ openModal('Add leave request','<div class="field"><label>Employee</label><select name="employee_id" required>'+employees.map(x=>'<option value="'+x.id+'">'+esc(x.full_name)+'</option>').join('')+'</select></div>'+select('Leave type','leave_type',['Annual','Sick','Maternity','Paternity','Unpaid','Other'])+field('Start date','start_date','date',true,'value="'+today()+'"')+field('End date','end_date','date',true,'value="'+today()+'"')+field('Reason','reason','text',false),async o=>{
   const {error}=await sb.from('leave_requests').insert({user_id:currentUser.id,employee_id:o.employee_id,leave_type:o.leave_type,start_date:o.start_date,end_date:o.end_date,reason:o.reason||null});
   if(error)alert('Could not save leave request: '+error.message);else await loadOperations();
  });
@@ -677,6 +676,7 @@ async function activateUser(user){
   document.getElementById('authGate').style.display='none';document.getElementById('appShell').style.display='grid';
   await loadCloudData();
   await loadAccounting();
+  await loadPayroll();
   await loadOperations();
  })();
  try{await activationPromise;}finally{activationPromise=null;}
