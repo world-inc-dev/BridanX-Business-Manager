@@ -1772,10 +1772,11 @@ document.getElementById('bxBackupFile').addEventListener('change',async e=>{
   let added=0;
   for(const key of keys){
    const existing=data[key],ids=new Set(existing.map(x=>String(x.id||'')).filter(Boolean));
-   const fingerprints=new Set(existing.map(x=>JSON.stringify(Object.fromEntries(Object.entries(x).filter(([k])=>k!=='id')))));
+   const fingerprintOf=x=>key==='stockMovements'?JSON.stringify([x.product_name||'',x.movement_type||'',Number(x.quantity_change||0),Number(x.previous_quantity||0),Number(x.new_quantity||0),Number(x.unit_cost||0),x.reason||'',x.reference||'',x.movement_date||'']):JSON.stringify(Object.fromEntries(Object.entries(x).filter(([k])=>k!=='id')));
+   const fingerprints=new Set(existing.map(fingerprintOf));
    for(const source of restored[key]){
     const item={...source};if(key==='stockMovements'){item.id=uid();item.inventory_id=null;item.user_id=currentUser?.id||null;}else if(!item.id)item.id=uid();
-    const fingerprint=JSON.stringify(Object.fromEntries(Object.entries(item).filter(([k])=>k!=='id')));
+    const fingerprint=fingerprintOf(item);
     if(ids.has(String(item.id))||fingerprints.has(fingerprint))continue;
     existing.push(item);ids.add(String(item.id));fingerprints.add(fingerprint);added++;
    }
