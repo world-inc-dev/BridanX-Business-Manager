@@ -1990,7 +1990,7 @@ document.getElementById('authForm').addEventListener('submit',async e=>{
   if(creatingAccount){
    // Set this before sign-up: Supabase may emit SIGNED_IN before signUp() resolves.
    localStorage.setItem('bx_open_plans_after_signup','yes');
-   result=await sb.auth.signUp({email,password,options:{data:{business_name:document.getElementById('authBusiness').value.trim()||'My Business',business_type:document.getElementById('authBusinessType').value||'general'}}});
+   result=await sb.auth.signUp({email,password,options:{data:{business_name:document.getElementById('authBusiness').value.trim()||'My Business',business_type:inviteCode?'school':(document.getElementById('authBusinessType').value||'general')}}});
    if(result.error)throw result.error;
    if(!result.data.session){authMsg.textContent='Account created. Check your email to confirm, then sign in.';return;}
   }else{
@@ -2027,7 +2027,7 @@ async function activateUser(user,openPlansAfterLogin=false){
   // Keep browser-side records strictly separated by authenticated account.
   KEY=BASE_KEY+':'+user.id;CURRENCY_KEY=BASE_CURRENCY_KEY+':'+user.id;
   try{data=normalizeBusinessData(JSON.parse(localStorage.getItem(KEY)||'null'));}catch(_){data=emptyBusinessData();}
-  currentUser=user;schoolOwnerId=user.id;isSchoolTeacher=false;try{const {data:teacherAccount}=await sb.from('school_teacher_accounts').select('user_id,teacher_id,account_status').eq('auth_user_id',user.id).maybeSingle();if(teacherAccount?.account_status==='active'){schoolOwnerId=teacherAccount.user_id;isSchoolTeacher=schoolOwnerId!==user.id;}}catch(e){console.warn('Teacher account lookup:',e.message||e)}try{businessType=localStorage.getItem(KEY+':business_type')||user.user_metadata?.business_type||'general';localStorage.setItem(KEY+':business_type',businessType)}catch(_){businessType=user.user_metadata?.business_type||'general'}applyBusinessWorkflow();setBusinessHeader(user.user_metadata?.business_name||'My Business');
+  currentUser=user;schoolOwnerId=user.id;isSchoolTeacher=false;try{const {data:teacherAccount}=await sb.from('school_teacher_accounts').select('user_id,teacher_id,account_status').eq('auth_user_id',user.id).maybeSingle();if(teacherAccount?.account_status==='active'){schoolOwnerId=teacherAccount.user_id;isSchoolTeacher=schoolOwnerId!==user.id;}}catch(e){console.warn('Teacher account lookup:',e.message||e)}try{businessType=isSchoolTeacher?'school':(localStorage.getItem(KEY+':business_type')||user.user_metadata?.business_type||'general');localStorage.setItem(KEY+':business_type',businessType)}catch(_){businessType=isSchoolTeacher?'school':(user.user_metadata?.business_type||'general')}applyBusinessWorkflow();setBusinessHeader(user.user_metadata?.business_name||'My Business');
   document.getElementById('authGate').style.display='none';document.getElementById('appShell').style.display='grid';
   // Show the subscription screen immediately; cloud/profile loading continues afterwards.
   if(pendingOpenPlans){
