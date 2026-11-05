@@ -1549,7 +1549,7 @@ function schRenderBursar(){
  if(yearEl&&!yearEl.value)yearEl.value=String(new Date().getFullYear());
  const active=schStudents.filter(x=>x.status==='active'),totalPaid=schPayments.reduce((n,p)=>n+Number(p.amount||0),0),totalDue=active.reduce((n,st)=>n+Math.max(0,schBalance(st)),0);
  set('schBursarCollected',money(totalPaid));set('schBursarDue',money(totalDue));set('schBursarStudents',active.length);set('schBursarCount',schPayments.length);
- const expenses=(data.transactions||[]).filter(x=>String(x.type||'').toLowerCase()==='expense').slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+ const expenses=(data.transactions||[]).filter(x=>String(x.type||'').toLowerCase()==='expense').slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));expenses.forEach(x=>{if(!x.id)x.id=uid()});
  set('schBursarAttendanceCount',schAttendance.length);set('schBursarExamCount',schExams.length);set('schBursarActivityCount',schActivities.length);set('schBursarExpenseTotal',money(expenses.reduce((n,x)=>n+Number(x.amount||0),0)));
 
  const expenseBody=document.getElementById('schBursarExpenses');if(expenseBody)expenseBody.innerHTML=expenses.slice(0,100).map((x,i)=>'<tr><td>'+esc(x.date||'—')+'</td><td>'+esc(x.description||'—')+'</td><td>'+esc(x.category||'Other')+'</td><td>'+esc(money(x.amount))+'</td><td><button class="btn" data-sch-expense-print="'+esc(x.id||i)+'">Print receipt</button></td></tr>').join('')||'<tr><td colspan="5">No school expenses recorded yet.</td></tr>';
