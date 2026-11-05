@@ -1065,6 +1065,27 @@ $('profileCurrency').addEventListener('change',e=>{
  updateCurrencyLabels();render();
 });
 let businessLogoData='';
+/* Apply the uploaded school badge as a subtle watermark to every printable
+   document opened by the app, without replacing its existing header badge. */
+const bxNativeWindowOpen=window.open.bind(window);
+window.open=function(...args){
+ const printWindow=bxNativeWindowOpen(...args);
+ if(!printWindow)return printWindow;
+ try{
+  const originalWrite=printWindow.document.write.bind(printWindow.document);
+  printWindow.document.write=function(...chunks){
+   let html=chunks.join('');
+   if(businessType==='school'&&typeof businessLogoData==='string'&&businessLogoData&&!html.includes('bx-school-print-watermark')){
+    const watermarkStyle='<style id="bx-school-watermark-style">@media screen,print{.bx-school-print-watermark{position:fixed!important;inset:0!important;display:flex!important;align-items:center!important;justify-content:center!important;pointer-events:none!important;z-index:0!important;overflow:hidden!important}.bx-school-print-watermark img{display:block!important;width:min(58vw,420px)!important;height:auto!important;max-height:58vh!important;object-fit:contain!important;opacity:.10!important}body>*:not(.bx-school-print-watermark){position:relative;z-index:1}}@media print{.bx-school-print-watermark{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style>';
+    const watermark='<div class="bx-school-print-watermark" aria-hidden="true"><img src="'+businessLogoData+'" alt=""></div>';
+    if(/<\\/head>/i.test(html))html=html.replace(/<\\/head>/i,watermarkStyle+'</head>');
+    if(/<body([^>]*)>/i.test(html))html=html.replace(/<body([^>]*)>/i,'<body$1>'+watermark);
+   }
+   return originalWrite(html);
+  };
+ }catch(error){console.warn('School print watermark could not be prepared:',error);}
+ return printWindow;
+};
 function loadBusinessLogo(){
  try{businessLogoData=localStorage.getItem(KEY+':business_logo')||'';}catch(_){businessLogoData='';}
  const img=$('businessLogoPreview'),placeholder=$('businessLogoPlaceholder');
