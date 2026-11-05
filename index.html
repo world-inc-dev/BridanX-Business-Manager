@@ -2236,7 +2236,7 @@ async function pushAllLocal(){
 }
 const originalSave=save;
 save=()=>{localStorage.setItem(KEY,JSON.stringify(data));render();if(currentUser&&cloudSyncEnabled){pushAllLocal().then(()=>pushWorkItems(data.workItems||[])).then(()=>pushInventoryMovements(data.stockMovements||[])).then(()=>localStorage.setItem(KEY,JSON.stringify(data))).catch(e=>{console.error(e);alert('Saved on this device, but cloud sync failed: '+e.message);});}};
-sb.auth.getSession().then(({data:{session}})=>{if(session)activateUser(session.user);});
-sb.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_IN'&&session&&!currentUser){const openPlans=localStorage.getItem('bx_open_plans_after_signup')==='yes';setTimeout(()=>{activateUser(session.user,openPlans).then(()=>{if(openPlans)localStorage.removeItem('bx_open_plans_after_signup');}).catch(error=>console.error('Account activation failed:',error));},0);}});
+sb.auth.getSession().then(async({data:{session}})=>{if(session){const pending=localStorage.getItem('bx_pending_school_teacher_invite');if(pending){try{await claimSchoolTeacherInvite(pending);localStorage.removeItem('bx_pending_school_teacher_invite');}catch(error){localStorage.removeItem('bx_pending_school_teacher_invite');alert('Teacher invitation could not be claimed: '+(error.message||error));}}activateUser(session.user);}});
+sb.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_IN'&&session&&!currentUser){if(localStorage.getItem('bx_pending_school_teacher_invite'))return;const openPlans=localStorage.getItem('bx_open_plans_after_signup')==='yes';setTimeout(()=>{activateUser(session.user,openPlans).then(()=>{if(openPlans)localStorage.removeItem('bx_open_plans_after_signup');}).catch(error=>console.error('Account activation failed:',error));},0);}});
 </script>
 </body></html>
