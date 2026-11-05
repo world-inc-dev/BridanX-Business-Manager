@@ -1989,7 +1989,7 @@ async function claimSchoolTeacherInvite(code){const {data,error}=await sb.functi
 document.getElementById('authForm').addEventListener('submit',async e=>{
  e.preventDefault();
  const submit=document.getElementById('authSubmit'),email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value;
- const creatingAccount=authMode==='signup',inviteCode=(document.getElementById('authTeacherInviteCode')?.value||'').trim().toLowerCase();if(inviteCode)localStorage.setItem('bx_pending_school_teacher_invite',inviteCode);else if(!creatingAccount)localStorage.removeItem('bx_pending_school_teacher_invite');submit.disabled=true;submit.textContent=creatingAccount?'Creating account…':'Signing in…';authMsg.textContent='Connecting securely…';
+ const creatingAccount=authMode==='signup',inviteCode=(document.getElementById('authTeacherInviteCode')?.value||'').trim().toLowerCase();if(inviteCode)localStorage.setItem('bx_pending_school_teacher_invite',inviteCode);submit.disabled=true;submit.textContent=creatingAccount?'Creating account…':'Signing in…';authMsg.textContent='Connecting securely…';
  try{
   let result;
   if(creatingAccount){
