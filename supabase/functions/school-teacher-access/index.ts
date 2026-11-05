@@ -40,8 +40,9 @@ Deno.serve(async (req) => {
         return json({ error: "Choose a teacher and enter a valid email address." }, 400);
       }
       const { data: teacher, error: teacherError } = await admin.from("school_teachers")
-        .select("id,full_name").eq("id", teacherId).eq("user_id", user.id).maybeSingle();
+        .select("id,full_name,employment_status").eq("id", teacherId).eq("user_id", user.id).maybeSingle();
       if (teacherError || !teacher) return json({ error: "Teacher record not found in your school." }, 404);
+      if (teacher.employment_status !== "active") return json({ error: "Activate this staff record before creating a login invitation." }, 409);
 
       const token = Array.from(crypto.getRandomValues(new Uint8Array(18)))
         .map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -70,6 +71,9 @@ Deno.serve(async (req) => {
       if (inviteError || !invite || invite.claimed_at || new Date(invite.expires_at).getTime() < Date.now()) {
         return json({ error: "This invitation code is invalid, expired or already used." }, 400);
       }
+      const { data: teacher, error: teacherError } = await admin.from("school_teachers")
+        .select("id,employment_status").eq("id", invite.teacher_id).eq("user_id", invite.user_id).maybeSingle();
+      if (teacherError || !teacher || teacher.employment_status !== "active") return json({ error: "This teacher record is no longer active. Contact the school administrator." }, 409);
       if ((user.email || "").toLowerCase() !== invite.email.toLowerCase()) {
         return json({ error: "Sign up or sign in using the email address the school invited." }, 403);
       }
