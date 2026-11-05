@@ -459,7 +459,7 @@ body{background:radial-gradient(ellipse at 70% -18%,rgba(44,103,190,.25),transpa
    <form id="authForm">
     <div class="field" id="businessField" style="display:none"><label>Business name</label><input id="authBusiness" autocomplete="organization" placeholder="Your business name"></div><div class="field" id="authBusinessTypeField" style="display:none"><label>Business category</label><select id="authBusinessType" required><option value="general">General business</option><option value="retail">Shop / retail</option><option value="supermarket">Supermarket / grocery</option><option value="restaurant">Restaurant / food</option><option value="salon">Salon / beauty</option><option value="pharmacy">Pharmacy</option><option value="agent">Mobile money / agent</option><option value="services">Professional services</option><option value="school">School / education</option><option value="transport">Transport / logistics</option><option value="manufacturing">Manufacturing / production</option><option value="agriculture">Agriculture / farming</option><option value="hospitality">Hotel / accommodation</option><option value="construction">Construction / hardware</option><option value="other">Other</option></select><small style="color:var(--muted)">Your category determines which tools appear in your dashboard.</small></div>
     <div class="field"><label>Email address</label><input id="authEmail" type="email" required autocomplete="email" placeholder="you@example.com"></div>
-    <div class="field"><label>Password</label><input id="authPassword" type="password" required minlength="6" autocomplete="current-password" placeholder="Enter your password"></div>
+    <div class="field"><label>Password</label><input id="authPassword" type="password" required minlength="6" autocomplete="current-password" placeholder="Enter your password"></div><div class="field" id="teacherInviteField" style="display:none"><label>School teacher invitation code (optional)</label><input id="authTeacherInviteCode" autocomplete="off" placeholder="Paste the code provided by your school"><small style="color:var(--muted)">Use the email address invited by the school. The code expires after 48 hours.</small></div>
     <button class="btn primary" id="authSubmit" type="submit" style="width:100%">Sign in securely <span aria-hidden="true">→</span></button>
    </form>
    <div id="authMessage" aria-live="polite"></div>
@@ -720,7 +720,7 @@ let KEY=BASE_KEY, CURRENCY_KEY=BASE_CURRENCY_KEY;
 function emptyBusinessData(){return {transactions:[],sales:[],products:[],customers:[],debts:[],workItems:[],stockMovements:[]};}
 function normalizeBusinessData(value){return {transactions:Array.isArray(value?.transactions)?value.transactions:[],sales:Array.isArray(value?.sales)?value.sales:[],products:Array.isArray(value?.products)?value.products:[],customers:Array.isArray(value?.customers)?value.customers:[],debts:Array.isArray(value?.debts)?value.debts:[],workItems:Array.isArray(value?.workItems)?value.workItems:[],stockMovements:Array.isArray(value?.stockMovements)?value.stockMovements:[]};}
 let data;try{data=normalizeBusinessData(JSON.parse(localStorage.getItem(KEY)||'null'));}catch(error){console.warn('Saved browser data could not be read; starting with an empty workspace:',error);data=emptyBusinessData();}
-let authMode='login', currentUser=null, cloudBusy=false, cloudSyncEnabled=true, activationPromise=null, pendingOpenPlans=false;
+let authMode='login', currentUser=null, cloudBusy=false, cloudSyncEnabled=true, activationPromise=null, pendingOpenPlans=false, schoolOwnerId=null, isSchoolTeacher=false;
 
 let accounting={accounts:[],entries:[],lines:[],documents:[]}, accountingRange={from:'',to:''};
 let employees=[],payrollRecords=[];
@@ -1963,7 +1963,7 @@ if(!window.supabase||typeof window.supabase.createClient!=='function'){authMsg.t
 function setAuthMode(mode){
  authMode=mode;
  document.getElementById('authTitle').textContent=mode==='login'?'Welcome back':'Create your business account';
- document.getElementById('businessField').style.display=mode==='signup'?'grid':'none';document.getElementById('authBusinessTypeField').style.display=mode==='signup'?'grid':'none';document.getElementById('authBusinessType').disabled=mode!=='signup';
+ document.getElementById('businessField').style.display=mode==='signup'?'grid':'none';document.getElementById('authBusinessTypeField').style.display=mode==='signup'?'grid':'none';document.getElementById('authBusinessType').disabled=mode!=='signup';document.getElementById('teacherInviteField').style.display=mode==='signup'?'grid':'none';
  document.getElementById('authPassword').autocomplete=mode==='signup'?'new-password':'current-password';
  document.getElementById('authSubmit').textContent=mode==='signup'?'Create account':'Sign in';
  document.getElementById('showLogin').classList.toggle('primary',mode==='login');
@@ -1979,10 +1979,11 @@ document.getElementById('bxNavStart').onclick=()=>bxShowAuth('signup');
 document.getElementById('showLogin').onclick=()=>setAuthMode('login');
 document.getElementById('showSignup').onclick=()=>setAuthMode('signup');
 document.getElementById('showSignup').onclick=()=>setAuthMode('signup');
+async function claimSchoolTeacherInvite(code){const {data,error}=await sb.functions.invoke('school-teacher-access',{body:{action:'claim_invite',invite_code:code}});if(error)throw error;if(!data?.success)throw new Error(data?.error||'Teacher invitation could not be claimed.');return data;}
 document.getElementById('authForm').addEventListener('submit',async e=>{
  e.preventDefault();
  const submit=document.getElementById('authSubmit'),email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value;
- const creatingAccount=authMode==='signup';submit.disabled=true;submit.textContent=creatingAccount?'Creating account…':'Signing in…';authMsg.textContent='Connecting securely…';
+ const creatingAccount=authMode==='signup',inviteCode=(document.getElementById('authTeacherInviteCode')?.value||'').trim().toLowerCase();if(creatingAccount&&inviteCode)localStorage.setItem('bx_pending_school_teacher_invite',inviteCode);submit.disabled=true;submit.textContent=creatingAccount?'Creating account…':'Signing in…';authMsg.textContent='Connecting securely…';
  try{
   let result;
   if(creatingAccount){
@@ -1996,6 +1997,7 @@ document.getElementById('authForm').addEventListener('submit',async e=>{
    if(result.error)throw result.error;
   }
   if(!result.data?.user)throw new Error('Sign-in did not return a user. Please try again.');
+  const pendingInvite=localStorage.getItem('bx_pending_school_teacher_invite');if(pendingInvite){await claimSchoolTeacherInvite(pendingInvite);localStorage.removeItem('bx_pending_school_teacher_invite');}
   const openPlans=localStorage.getItem('bx_open_plans_after_signup')==='yes';
   await activateUser(result.data.user,openPlans);
   if(openPlans){
@@ -2015,6 +2017,7 @@ document.getElementById('authForm').addEventListener('submit',async e=>{
  document.getElementById('signOutBtn').onclick=async()=>{await sb.auth.signOut();currentUser=null;isPlatformOwner=false;cloudSyncEnabled=true;data=emptyBusinessData();render();document.getElementById('appShell').style.display='none';document.getElementById('authGate').style.display='grid';};
 function setBusinessHeader(name){const el=document.getElementById('signedInBusinessName');if(el){const value=String(name||'My Business').trim()||'My Business';el.textContent=value;el.title=value;}}
 function uid(){return crypto.randomUUID()}
+function schoolDataOwnerId(){return schoolOwnerId||currentUser?.id}
 async function activateUser(user,openPlansAfterLogin=false){
  if(openPlansAfterLogin)pendingOpenPlans=true;
  if(activationPromise){await activationPromise;return;}
@@ -2023,7 +2026,7 @@ async function activateUser(user,openPlansAfterLogin=false){
   // Keep browser-side records strictly separated by authenticated account.
   KEY=BASE_KEY+':'+user.id;CURRENCY_KEY=BASE_CURRENCY_KEY+':'+user.id;
   try{data=normalizeBusinessData(JSON.parse(localStorage.getItem(KEY)||'null'));}catch(_){data=emptyBusinessData();}
-  currentUser=user;try{businessType=localStorage.getItem(KEY+':business_type')||user.user_metadata?.business_type||'general';localStorage.setItem(KEY+':business_type',businessType)}catch(_){businessType=user.user_metadata?.business_type||'general'}applyBusinessWorkflow();setBusinessHeader(user.user_metadata?.business_name||'My Business');
+  currentUser=user;schoolOwnerId=user.id;isSchoolTeacher=false;try{const {data:teacherAccount}=await sb.from('school_teacher_accounts').select('user_id,teacher_id,account_status').eq('auth_user_id',user.id).maybeSingle();if(teacherAccount?.account_status==='active'){schoolOwnerId=teacherAccount.user_id;isSchoolTeacher=schoolOwnerId!==user.id;}}catch(e){console.warn('Teacher account lookup:',e.message||e)}try{businessType=localStorage.getItem(KEY+':business_type')||user.user_metadata?.business_type||'general';localStorage.setItem(KEY+':business_type',businessType)}catch(_){businessType=user.user_metadata?.business_type||'general'}applyBusinessWorkflow();setBusinessHeader(user.user_metadata?.business_name||'My Business');
   document.getElementById('authGate').style.display='none';document.getElementById('appShell').style.display='grid';
   // Show the subscription screen immediately; cloud/profile loading continues afterwards.
   if(pendingOpenPlans){
