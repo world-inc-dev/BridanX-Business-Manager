@@ -459,7 +459,7 @@ body{background:radial-gradient(ellipse at 70% -18%,rgba(44,103,190,.25),transpa
    <form id="authForm">
     <div class="field" id="businessField" style="display:none"><label>Business name</label><input id="authBusiness" autocomplete="organization" placeholder="Your business name"></div><div class="field" id="authBusinessTypeField" style="display:none"><label>Business category</label><select id="authBusinessType" required><option value="general">General business</option><option value="retail">Shop / retail</option><option value="supermarket">Supermarket / grocery</option><option value="restaurant">Restaurant / food</option><option value="salon">Salon / beauty</option><option value="pharmacy">Pharmacy</option><option value="agent">Mobile money / agent</option><option value="services">Professional services</option><option value="school">School / education</option><option value="transport">Transport / logistics</option><option value="manufacturing">Manufacturing / production</option><option value="agriculture">Agriculture / farming</option><option value="hospitality">Hotel / accommodation</option><option value="construction">Construction / hardware</option><option value="other">Other</option></select><small style="color:var(--muted)">Your category determines which tools appear in your dashboard.</small></div>
     <div class="field"><label>Email address</label><input id="authEmail" type="email" required autocomplete="email" placeholder="you@example.com"></div>
-    <div class="field"><label>Password</label><input id="authPassword" type="password" required minlength="6" autocomplete="current-password" placeholder="Enter your password"></div><div class="field" id="teacherInviteField" style="display:none"><label>School teacher invitation code (optional)</label><input id="authTeacherInviteCode" autocomplete="off" placeholder="Paste the code provided by your school"><small style="color:var(--muted)">Use the email address invited by the school. The code expires after 48 hours.</small></div>
+    <div class="field"><label>Password</label><input id="authPassword" type="password" required minlength="6" autocomplete="current-password" placeholder="Enter your password"></div><div class="field" id="teacherInviteField" style="display:none"><label>Teacher invitation code (if your school invited you)</label><input id="authTeacherInviteCode" autocomplete="off" placeholder="Paste the code provided by your school"><small style="color:var(--muted)">Use the email address invited by the school. The code expires after 48 hours.</small></div>
     <button class="btn primary" id="authSubmit" type="submit" style="width:100%">Sign in securely <span aria-hidden="true">→</span></button>
    </form>
    <div id="authMessage" aria-live="polite"></div>
@@ -1968,7 +1968,7 @@ if(!window.supabase||typeof window.supabase.createClient!=='function'){authMsg.t
 function setAuthMode(mode){
  authMode=mode;
  document.getElementById('authTitle').textContent=mode==='login'?'Welcome back':'Create your business account';
- document.getElementById('businessField').style.display=mode==='signup'?'grid':'none';document.getElementById('authBusinessTypeField').style.display=mode==='signup'?'grid':'none';document.getElementById('authBusinessType').disabled=mode!=='signup';document.getElementById('teacherInviteField').style.display=mode==='signup'?'grid':'none';
+ document.getElementById('businessField').style.display=mode==='signup'?'grid':'none';document.getElementById('authBusinessTypeField').style.display=mode==='signup'?'grid':'none';document.getElementById('authBusinessType').disabled=mode!=='signup';document.getElementById('teacherInviteField').style.display='grid';
  document.getElementById('authPassword').autocomplete=mode==='signup'?'new-password':'current-password';
  document.getElementById('authSubmit').textContent=mode==='signup'?'Create account':'Sign in';
  document.getElementById('showLogin').classList.toggle('primary',mode==='login');
@@ -1988,7 +1988,7 @@ async function claimSchoolTeacherInvite(code){const {data,error}=await sb.functi
 document.getElementById('authForm').addEventListener('submit',async e=>{
  e.preventDefault();
  const submit=document.getElementById('authSubmit'),email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value;
- const creatingAccount=authMode==='signup',inviteCode=(document.getElementById('authTeacherInviteCode')?.value||'').trim().toLowerCase();if(creatingAccount&&inviteCode)localStorage.setItem('bx_pending_school_teacher_invite',inviteCode);submit.disabled=true;submit.textContent=creatingAccount?'Creating account…':'Signing in…';authMsg.textContent='Connecting securely…';
+ const creatingAccount=authMode==='signup',inviteCode=(document.getElementById('authTeacherInviteCode')?.value||'').trim().toLowerCase();if(inviteCode)localStorage.setItem('bx_pending_school_teacher_invite',inviteCode);submit.disabled=true;submit.textContent=creatingAccount?'Creating account…':'Signing in…';authMsg.textContent='Connecting securely…';
  try{
   let result;
   if(creatingAccount){
